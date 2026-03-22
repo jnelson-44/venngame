@@ -540,3 +540,13 @@ button{
 
   color:#c62828;
 }
+
+#mobileStatsBtn {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  #mobileStatsBtn {
+    display: inline-block;
+  }
+}
