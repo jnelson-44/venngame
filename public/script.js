@@ -49,6 +49,7 @@
   const submitWordBtn = document.getElementById('submitWordBtn');
   const entryBar = document.getElementById('entryBar');
   const entryStatus = document.getElementById('entryStatus');
+  const hint = document.querySelector('.hint');
 
   let gameStarted = false;
   let tutorialMode = false;
@@ -72,6 +73,11 @@
   const flashDuration = 400;
 
   let lastMask = 0;
+  let clickedMask = 0;
+  let clickedMaskTimeout = null;
+
+
+  let dictionary = null;
 
   const notes = {};
 
@@ -115,14 +121,14 @@
   ];
 
   function setStatus(message, color) {
-  statusMessage.textContent = message;
-  statusMessage.style.color = color;
+    statusMessage.textContent = message;
+    statusMessage.style.color = color;
 
-  if (entryStatus) {
-    entryStatus.textContent = message;
-    entryStatus.style.color = color;
+    if (entryStatus) {
+      entryStatus.textContent = message;
+      entryStatus.style.color = color;
+    }
   }
-}
 
   function syncMobileStats() {
     if (mobileAverageTimeValue && averageTimeValue) {
@@ -245,12 +251,21 @@
     lineHeight = 18,
     align = 'center',
     font = '16px system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-    color = '#333'
+    color = '#333',
+    glow = false
   } = {}) {
     ctx.save();
     ctx.font = font;
     ctx.fillStyle = color;
     ctx.textAlign = align;
+
+    if (glow) {
+      ctx.shadowColor = 'rgba(255, 152, 0, 0.9)';
+      ctx.shadowBlur = 16;
+    } else {
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+    }
 
     const words = String(text).split(/\s+/);
     const lines = [];
@@ -368,31 +383,39 @@
     if (gameStarted || tutorialMode) {
       drawWrappedLabel(labelA, A.x - A.r - 24, A.y, {
         maxWidth: 200,
-        align: 'right'
+        align: 'right',
+        glow: !!(clickedMask & 1),
+        color: (clickedMask & 1) ? '#111' : '#333'
       });
 
       drawWrappedLabel(labelB, B.x + B.r + 24, B.y, {
         maxWidth: 200,
-        align: 'left'
+        align: 'left',
+        glow: !!(clickedMask & 2),
+        color: (clickedMask & 2) ? '#111' : '#333'
       });
 
       drawWrappedLabel(labelC, C.x, C.y - C.r - 28, {
         maxWidth: 220,
-        align: 'center'
+        align: 'center',
+        glow: !!(clickedMask & 4),
+        color: (clickedMask & 4) ? '#111' : '#333'
       });
     }
 
     const flashAlpha = getFlashAlpha();
 
-    for (const key of Object.keys(notes)) {
-      const mask = Number(key);
-
-      if (mask === flashingMask && flashAlpha !== null) {
-        drawRegion(mask, `rgba(0,0,0,${flashAlpha})`);
-      } else {
-        drawRegion(mask, 'rgba(0,0,0,0.28)');
-      }
+    for (let mask = 1; mask <= 7; mask++) {
+  if (notes[mask]) {
+    if (mask === flashingMask && flashAlpha !== null) {
+      drawRegion(mask, `rgba(0,0,0,${flashAlpha})`);
+    } else {
+      drawRegion(mask, 'rgba(0,0,0,0.28)');
     }
+  } else if (mask === clickedMask) {
+    drawRegion(mask);
+  }
+}
 
     for (const [key, word] of Object.entries(notes)) {
       drawRegionWord(Number(key), word);
@@ -555,14 +578,22 @@
       return;
     }
 
-    const mask = findRegionForWord(word);
+    // check dictionary first
+if (!dictionary || !dictionary.has(word)) {
+  statusMessage.textContent = "That word is not in the dictionary.";
+  statusMessage.style.color = "#c62828";
+  animateInputError();
+  return;
+}
 
-    if (!mask) {
-      statusMessage.textContent = "That word is not in this puzzle’s dictionary.";
-      statusMessage.style.color = "#c62828";
-      animateInputError();
-      return;
-    }
+const mask = findRegionForWord(word);
+
+if (!mask) {
+  statusMessage.textContent = "That word doesn't belong in any region.";
+  statusMessage.style.color = "#c62828";
+  animateInputError();
+  return;
+}
 
     if (notes[mask]) {
       statusMessage.textContent = "That section is already filled.";
@@ -690,7 +721,17 @@
       }
 
       puzzleData = await response.json();
-      validWords = puzzleData.regions;
+validWords = puzzleData.regions;
+
+// load dictionary
+const dictResponse = await fetch('/dictionary.txt');
+const dictText = await dictResponse.text();
+dictionary = new Set(
+  dictText
+    .split('\n')
+    .map(w => w.trim().toLowerCase())
+    .filter(Boolean)
+);
 
       if (puzzleData.labels) {
         labelA = puzzleData.labels.A || labelA;
@@ -736,23 +777,44 @@
     }
   }
 
+  canvas.addEventListener('click', (e) => {
+  if (!gameStarted || tutorialMode) return;
 
-  canvas.addEventListener('mousemove', (e) => {
-    if (!gameStarted || tutorialMode) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const y = (e.clientY - rect.top) * (canvas.height / rect.height);
 
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-    const mask = regionAt(x, y);
+  const mask = regionAt(x, y);
 
-    if (mask !== lastMask) {
-      lastMask = mask;
-      drawBase();
-      if (mask && !notes[mask]) {
-        drawRegion(mask);
-      }
-    }
-  });
+  if (!mask) return;
+
+  clickedMask = mask;
+  lastMask = mask;
+
+  const rules = [];
+
+  if (mask & 1) rules.push(labelA);
+  if (mask & 2) rules.push(labelB);
+  if (mask & 4) rules.push(labelC);
+
+  setStatus(
+    "Must satisfy: " + rules.join(" • "),
+    "#444"
+  );
+
+  if (clickedMaskTimeout) {
+    clearTimeout(clickedMaskTimeout);
+  }
+
+  clickedMaskTimeout = setTimeout(() => {
+    clickedMask = 0;
+    clickedMaskTimeout = null;
+    setStatus("", "");
+    drawBase();
+  }, 5000);
+
+  drawBase();
+});
 
   startBtn.addEventListener('click', () => {
     tutorialMode = false;
@@ -760,6 +822,7 @@
     startOverlay.style.display = 'none';
     canvas.classList.remove('prestart');
     entryBar.style.display = 'block';
+    if (hint) hint.style.display = 'block';
     startTimer();
     drawBase();
     wordInput.focus();
@@ -796,6 +859,7 @@
 
     tutorialOverlay.style.display = 'none';
     tutorialMode = false;
+    clickedMask = 0;
 
     if (puzzleData?.labels) {
       labelA = puzzleData.labels.A;
@@ -810,6 +874,7 @@
   tutorialExit.addEventListener('click', () => {
     tutorialOverlay.style.display = 'none';
     tutorialMode = false;
+    clickedMask = 0;
 
     if (puzzleData?.labels) {
       labelA = puzzleData.labels.A;
@@ -835,7 +900,9 @@
   });
 
   shareResults.addEventListener('click', async () => {
-    const shareText = `I finished today’s Intersection puzzle in ${finalShareTime}. Can you beat my time?`;
+    const shareText = `I finished today’s Intersection puzzle in ${finalShareTime}. Can you beat my time?
+
+https://venngame-ncza.onrender.com/`;
 
     try {
       if (navigator.clipboard && window.isSecureContext) {
