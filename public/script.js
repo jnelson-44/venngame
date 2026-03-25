@@ -249,10 +249,10 @@
 
   function drawWrappedLabel(text, x, y, {
     maxWidth = 180,
-    lineHeight = 18,
+    lineHeight = window.innerWidth < 760 ? 20 : 18,
     align = 'center',
     font = window.innerWidth < 760
-  ? 'bold 26px system-ui, -apple-system, Segoe UI, Roboto, sans-serif'
+  ? 'bold 24px system-ui, -apple-system, Segoe UI, Roboto, sans-serif'
   : 'bold 16px system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
     color = '#333',
     glow = false
@@ -270,35 +270,39 @@
       ctx.shadowBlur = 0;
     }
 
-    const words = String(text).split(/\s+/);
-    const lines = [];
-    let line = "";
+    const paragraphs = String(text).split('\n');
+const lines = [];
 
-    for (let i = 0; i < words.length; i++) {
-      const test = line ? line + " " + words[i] : words[i];
-      if (ctx.measureText(test).width <= maxWidth) {
-        line = test;
-      } else {
-        if (line) lines.push(line);
+for (const paragraph of paragraphs) {
+  const words = paragraph.split(/\s+/);
+  let line = "";
 
-        if (ctx.measureText(words[i]).width > maxWidth) {
-          let chunk = "";
-          for (const ch of words[i]) {
-            if (ctx.measureText(chunk + ch).width <= maxWidth) {
-              chunk += ch;
-            } else {
-              lines.push(chunk);
-              chunk = ch;
-            }
+  for (let i = 0; i < words.length; i++) {
+    const test = line ? line + " " + words[i] : words[i];
+    if (ctx.measureText(test).width <= maxWidth) {
+      line = test;
+    } else {
+      if (line) lines.push(line);
+
+      if (ctx.measureText(words[i]).width > maxWidth) {
+        let chunk = "";
+        for (const ch of words[i]) {
+          if (ctx.measureText(chunk + ch).width <= maxWidth) {
+            chunk += ch;
+          } else {
+            lines.push(chunk);
+            chunk = ch;
           }
-          line = chunk;
-        } else {
-          line = words[i];
         }
+        line = chunk;
+      } else {
+        line = words[i];
       }
     }
+  }
 
-    if (line) lines.push(line);
+  if (line) lines.push(line);
+}
 
     const totalHeight = lines.length * lineHeight;
     let yStart = y - totalHeight / 2 + lineHeight * 0.85;
@@ -387,19 +391,29 @@
       const isMobile = window.innerWidth < 760;
 const activeMask = isMobile ? clickedMask : (hoveredMask || clickedMask);
 
-drawWrappedLabel(labelA, A.x - A.r - 24, A.y, {
-  maxWidth: 200,
-  align: 'right',
-  glow: !!(activeMask & 1),
-  color: (activeMask & 1) ? '#111' : '#333'
-});
+drawWrappedLabel(
+  window.innerWidth < 760 ? splitSideRule(labelA, 16) : labelA,
+  window.innerWidth < 760 ? 95 : A.x - A.r - 24,
+  A.y,
+  {
+    maxWidth: window.innerWidth < 760 ? 170 : 200,
+    align: window.innerWidth < 760 ? 'center' : 'right',
+    glow: !!(activeMask & 1),
+    color: (activeMask & 1) ? '#111' : '#333'
+  }
+);
 
-drawWrappedLabel(labelB, B.x + B.r + 24, B.y, {
-  maxWidth: 200,
-  align: 'left',
-  glow: !!(activeMask & 2),
-  color: (activeMask & 2) ? '#111' : '#333'
-});
+drawWrappedLabel(
+  window.innerWidth < 760 ? splitSideRule(labelB, 16) : labelB,
+  window.innerWidth < 760 ? 705 : B.x + B.r + 24,
+  B.y,
+  {
+    maxWidth: window.innerWidth < 760 ? 170 : 200,
+    align: window.innerWidth < 760 ? 'center' : 'left',
+    glow: !!(activeMask & 2),
+    color: (activeMask & 2) ? '#111' : '#333'
+  }
+);
 
 drawWrappedLabel(labelC, C.x, C.y - C.r - 28, {
   maxWidth: window.innerWidth < 760 ? 320 : 220,
@@ -1031,6 +1045,31 @@ canvas.addEventListener('mousemove', (e) => {
 
   drawBase();
 });
+
+function splitSideRule(text, maxChars = 16) {
+  const str = String(text).trim();
+  if (str.length <= maxChars) return str;
+
+  const words = str.split(/\s+/);
+  if (words.length < 2) return str;
+
+  let bestIndex = 1;
+  let bestDiff = Infinity;
+
+  for (let i = 1; i < words.length; i++) {
+    const left = words.slice(0, i).join(' ');
+    const right = words.slice(i).join(' ');
+    const diff = Math.abs(left.length - right.length);
+
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      bestIndex = i;
+    }
+  }
+
+  return words.slice(0, bestIndex).join(' ') + '\n' +
+         words.slice(bestIndex).join(' ');
+}
 
 canvas.addEventListener('mouseleave', () => {
   if (window.innerWidth < 760) return;
