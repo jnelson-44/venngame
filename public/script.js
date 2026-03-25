@@ -925,6 +925,42 @@ https://venngame-ncza.onrender.com/`;
         }
       }
 
+      const stageEl = document.getElementById('stage');
+
+function adjustForKeyboard() {
+  if (!window.visualViewport || !stageEl) return;
+  if (document.activeElement !== wordInput) return;
+
+  const keyboardHeight = window.innerHeight - window.visualViewport.height;
+  const keyboardOpen = keyboardHeight > 120;
+
+  if (!keyboardOpen) return;
+
+  setTimeout(() => {
+    const rect = stageEl.getBoundingClientRect();
+    const targetTop = 90;
+    const targetBottom = window.visualViewport.height - 24;
+
+    if (rect.bottom > targetBottom || rect.top < targetTop) {
+      const absoluteTop = window.scrollY + rect.top;
+      const desiredScroll =
+        absoluteTop - targetTop - Math.max(0, (window.visualViewport.height - rect.height) / 2);
+
+      window.scrollTo({
+        top: Math.max(0, desiredScroll),
+        behavior: 'smooth'
+      });
+    }
+  }, 120);
+}
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', adjustForKeyboard);
+}
+
+wordInput.addEventListener('focus', adjustForKeyboard);
+wordInput.addEventListener('click', adjustForKeyboard);
+
       completeTime.innerHTML = "<strong>Copied</strong><br>Thanks for playing!";
     } catch (err) {
       console.error("Clipboard copy failed:", err);
