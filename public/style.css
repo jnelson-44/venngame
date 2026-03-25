@@ -569,24 +569,73 @@ button:hover{
 
 @media (max-width:760px){
 
+  #startOverlay{
+  top:290px;
+  bottom:auto;
+  align-items:flex-start;
+  padding-top:110px;
+}
+
+#tutorialOverlay{
+  top:400px;
+  bottom:auto;
+  align-items:flex-start;
+  justify-content:center;
+  padding-top:0;
+}
+
+#startBox{
+  width:min(92vw, 420px);
+  padding:28px 22px 24px;
+}
+
   .sidePanel{
     display:none;
   }
 
   .wrap{
-    padding:16px 10px 120px;
+    padding:16px 10px 24px;
+  }
+
+  #submitWordBtn{
+  display:none;
+}
+
+  .game-card{
+    padding:10px;
+    display:flex;
+    flex-direction:column;
+  }
+
+  #entryBar{
+    position:static;
+    order:-1;
+    display:none;
+    margin-bottom:12px;
+    padding:0;
+    background:transparent;
+    backdrop-filter:none;
+    border-top:none;
+    z-index:auto;
+  }
+
+  #statusMessage{
+    margin:0 0 8px;
   }
 
   .entryControls{
     flex-direction:column;
+    gap:8px;
+    margin-top:0;
   }
 
   .primary{
     width:100%;
   }
 
-  .game-card{
-    padding:10px;
+  .hint{
+    margin-top:8px;
+    font-size:12px;
   }
 
 }

@@ -110,7 +110,7 @@
     },
     {
       title: "Enter Words",
-      text: "Type a word below. If it is valid, it will automatically be placed in the correct region.",
+      text: "Type a word into the text box and press enter. If it is valid, it will automatically be placed in the correct region.",
       highlight: null
     },
     {
@@ -996,6 +996,15 @@ wordInput.addEventListener('click', adjustForKeyboard);
       drawRegion(lastMask);
     }
   });
+
+  wordInput.addEventListener('focus', () => {
+  setTimeout(() => {
+    window.scrollTo({
+      top: 120,
+      behavior: "smooth"
+    });
+  }, 300);
+});
 
   drawBase();
   loadPuzzleData();
