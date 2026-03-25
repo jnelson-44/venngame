@@ -74,6 +74,7 @@
 
   let lastMask = 0;
   let clickedMask = 0;
+  let hoveredMask = 0;
   let clickedMaskTimeout = null;
 
 
@@ -250,7 +251,9 @@
     maxWidth = 180,
     lineHeight = 18,
     align = 'center',
-    font = '16px system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+    font = window.innerWidth < 760
+  ? 'bold 26px system-ui, -apple-system, Segoe UI, Roboto, sans-serif'
+  : 'bold 16px system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
     color = '#333',
     glow = false
   } = {}) {
@@ -381,39 +384,46 @@
     ctx.globalAlpha = 1;
 
     if (gameStarted || tutorialMode) {
-      drawWrappedLabel(labelA, A.x - A.r - 24, A.y, {
-        maxWidth: 200,
-        align: 'right',
-        glow: !!(clickedMask & 1),
-        color: (clickedMask & 1) ? '#111' : '#333'
-      });
+      const isMobile = window.innerWidth < 760;
+const activeMask = isMobile ? clickedMask : (hoveredMask || clickedMask);
 
-      drawWrappedLabel(labelB, B.x + B.r + 24, B.y, {
-        maxWidth: 200,
-        align: 'left',
-        glow: !!(clickedMask & 2),
-        color: (clickedMask & 2) ? '#111' : '#333'
-      });
+drawWrappedLabel(labelA, A.x - A.r - 24, A.y, {
+  maxWidth: 200,
+  align: 'right',
+  glow: !!(activeMask & 1),
+  color: (activeMask & 1) ? '#111' : '#333'
+});
 
-      drawWrappedLabel(labelC, C.x, C.y - C.r - 28, {
-        maxWidth: 220,
-        align: 'center',
-        glow: !!(clickedMask & 4),
-        color: (clickedMask & 4) ? '#111' : '#333'
-      });
+drawWrappedLabel(labelB, B.x + B.r + 24, B.y, {
+  maxWidth: 200,
+  align: 'left',
+  glow: !!(activeMask & 2),
+  color: (activeMask & 2) ? '#111' : '#333'
+});
+
+drawWrappedLabel(labelC, C.x, C.y - C.r - 28, {
+  maxWidth: window.innerWidth < 760 ? 320 : 220,
+  align: 'center',
+  glow: !!(activeMask & 4),
+  color: (activeMask & 4) ? '#111' : '#333'
+});
     }
 
     const flashAlpha = getFlashAlpha();
 
-    for (let mask = 1; mask <= 7; mask++) {
+    const isMobile = window.innerWidth < 760;
+
+for (let mask = 1; mask <= 7; mask++) {
   if (notes[mask]) {
     if (mask === flashingMask && flashAlpha !== null) {
       drawRegion(mask, `rgba(0,0,0,${flashAlpha})`);
     } else {
       drawRegion(mask, 'rgba(0,0,0,0.28)');
     }
-  } else if (mask === clickedMask) {
-    drawRegion(mask);
+  } else if (isMobile && mask === clickedMask) {
+    drawRegion(mask, 'rgba(0,0,0,0.16)');
+  } else if (!isMobile && mask === hoveredMask) {
+    drawRegion(mask, 'rgba(0,0,0,0.16)');
   }
 }
 
@@ -785,22 +795,24 @@ dictionary = new Set(
   const y = (e.clientY - rect.top) * (canvas.height / rect.height);
 
   const mask = regionAt(x, y);
+if (!mask) return;
 
-  if (!mask) return;
+  const isMobile = window.innerWidth < 760;
 
+lastMask = mask;
+
+const rules = [];
+if (mask & 1) rules.push(labelA);
+if (mask & 2) rules.push(labelB);
+if (mask & 4) rules.push(labelC);
+
+setStatus(
+  "Must satisfy: " + rules.join(" • "),
+  "#444"
+);
+
+if (isMobile) {
   clickedMask = mask;
-  lastMask = mask;
-
-  const rules = [];
-
-  if (mask & 1) rules.push(labelA);
-  if (mask & 2) rules.push(labelB);
-  if (mask & 4) rules.push(labelC);
-
-  setStatus(
-    "Must satisfy: " + rules.join(" • "),
-    "#444"
-  );
 
   if (clickedMaskTimeout) {
     clearTimeout(clickedMaskTimeout);
@@ -812,8 +824,9 @@ dictionary = new Set(
     setStatus("", "");
     drawBase();
   }, 5000);
+}
 
-  drawBase();
+drawBase();
 });
 
   startBtn.addEventListener('click', () => {
@@ -925,41 +938,6 @@ https://venngame-ncza.onrender.com/`;
         }
       }
 
-      const stageEl = document.getElementById('stage');
-
-function adjustForKeyboard() {
-  if (!window.visualViewport || !stageEl) return;
-  if (document.activeElement !== wordInput) return;
-
-  const keyboardHeight = window.innerHeight - window.visualViewport.height;
-  const keyboardOpen = keyboardHeight > 120;
-
-  if (!keyboardOpen) return;
-
-  setTimeout(() => {
-    const rect = stageEl.getBoundingClientRect();
-    const targetTop = 90;
-    const targetBottom = window.visualViewport.height - 24;
-
-    if (rect.bottom > targetBottom || rect.top < targetTop) {
-      const absoluteTop = window.scrollY + rect.top;
-      const desiredScroll =
-        absoluteTop - targetTop - Math.max(0, (window.visualViewport.height - rect.height) / 2);
-
-      window.scrollTo({
-        top: Math.max(0, desiredScroll),
-        behavior: 'smooth'
-      });
-    }
-  }, 120);
-}
-
-if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', adjustForKeyboard);
-}
-
-wordInput.addEventListener('focus', adjustForKeyboard);
-wordInput.addEventListener('click', adjustForKeyboard);
 
       completeTime.innerHTML = "<strong>Copied</strong><br>Thanks for playing!";
     } catch (err) {
@@ -997,14 +975,81 @@ wordInput.addEventListener('click', adjustForKeyboard);
     }
   });
 
-  wordInput.addEventListener('focus', () => {
+
+const stageEl = document.getElementById('stage');
+
+function adjustForKeyboard() {
+  if (!window.visualViewport || !stageEl) return;
+  if (document.activeElement !== wordInput) return;
+
+  const keyboardHeight = window.innerHeight - window.visualViewport.height;
+  const keyboardOpen = keyboardHeight > 120;
+
+  if (!keyboardOpen) return;
+
   setTimeout(() => {
-    window.scrollTo({
-      top: 120,
-      behavior: "smooth"
-    });
-  }, 300);
+    const rect = stageEl.getBoundingClientRect();
+    const targetTop = 90;
+    const targetBottom = window.visualViewport.height - 24;
+
+    if (rect.bottom > targetBottom || rect.top < targetTop) {
+      const absoluteTop = window.scrollY + rect.top;
+      const desiredScroll =
+        absoluteTop - targetTop - Math.max(0, (window.visualViewport.height - rect.height) / 2);
+
+      window.scrollTo({
+        top: Math.max(0, desiredScroll),
+        behavior: 'smooth'
+      });
+    }
+  }, 120);
+}
+
+canvas.addEventListener('mousemove', (e) => {
+  if (!gameStarted || tutorialMode) return;
+  if (window.innerWidth < 760) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+  const mask = regionAt(x, y);
+  hoveredMask = mask;
+
+  if (!clickedMask) {
+    if (mask) {
+      const rules = [];
+      if (mask & 1) rules.push(labelA);
+      if (mask & 2) rules.push(labelB);
+      if (mask & 4) rules.push(labelC);
+
+      setStatus("Must satisfy: " + rules.join(" • "), "#444");
+    } else {
+      setStatus("", "");
+    }
+  }
+
+  drawBase();
 });
+
+canvas.addEventListener('mouseleave', () => {
+  if (window.innerWidth < 760) return;
+
+  hoveredMask = 0;
+
+  if (!clickedMask) {
+    setStatus("", "");
+  }
+
+  drawBase();
+});
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', adjustForKeyboard);
+}
+
+wordInput.addEventListener('focus', adjustForKeyboard);
+wordInput.addEventListener('click', adjustForKeyboard);
 
   drawBase();
   loadPuzzleData();
