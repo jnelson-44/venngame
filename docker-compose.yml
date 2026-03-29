@@ -2,14 +2,12 @@ services:
   app:
     build: .
     ports:
-      - "3000"
+      - "8000"
     volumes:
       - .:/app
-      - /app/node_modules
     environment:
-      NODE_ENV: development
       DATABASE_URL: "postgres://root:passwordCity@db:5432/primary"
-    command: npm run dev
+    command: fastapi dev --host 0.0.0.0
     depends_on:
       db:
         condition: service_healthy
