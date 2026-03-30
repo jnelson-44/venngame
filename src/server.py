@@ -1,5 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
+import os
+import psycopg
 import src.lib.Puzzle as Puzzle
 
 ########################################
@@ -11,6 +13,28 @@ api  = FastAPI()
 root.mount("/api", api)
 root.mount("/", StaticFiles(directory="public",html=True), name="static")
 
+
+########################################
+# DATABASE INIT                        #
+########################################
+conn = psycopg.connect(os.getenv("DATABASE_URL"))
+def db_init() -> None:
+    with conn:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+CREATE TABLE IF NOT EXISTS solves (
+  id SERIAL PRIMARY KEY,
+  puzzle_id TEXT NOT NULL,
+  solve_time_seconds INTEGER NOT NULL,
+  solved_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+""")
+
+# TODO: Switch to Lifespan Events
+#       https://fastapi.tiangolo.com/advanced/events/#async-context-manager
+@root.on_event("startup")
+def on_startup():
+    db_init()
 
 
 ########################################
