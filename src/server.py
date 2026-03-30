@@ -1,11 +1,39 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
+import os
+from psycopg_pool import AsyncConnectionPool
 import src.lib.Puzzle as Puzzle
 
 ########################################
-# SERVER CONFIG                        #
+# DATABASE & SERVER INIT               #
 ########################################
-root = FastAPI()
+async def db_create_tables(pool:AsyncConnectionPool) -> None:
+    async with pool.connection() as conn:
+        async with conn.cursor() as cursor:
+            await cursor.execute("""
+CREATE TABLE IF NOT EXISTS solves (
+  id SERIAL PRIMARY KEY,
+  puzzle_id TEXT NOT NULL,
+  solve_time_seconds INTEGER NOT NULL,
+  solved_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+""")
+
+
+@asynccontextmanager
+async def fastapi_lifespan(app:FastAPI):
+    app.db_pool = AsyncConnectionPool(conninfo=os.getenv("DATABASE_URL"),open=False)
+    await app.db_pool.open()
+    # app.db_pool = AsyncConnectionPool(conninfo=os.getenv("DATABASE_URL"))
+    await db_create_tables(app.db_pool)
+    yield
+    await app.db_pool.close()
+
+
+# Lifespan only applies to top-level instances:
+#  https://fastapi.tiangolo.com/advanced/events/#sub-applications
+root = FastAPI(lifespan=fastapi_lifespan)
 api  = FastAPI()
 
 root.mount("/api", api)

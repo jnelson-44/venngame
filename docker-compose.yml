@@ -18,6 +18,7 @@ services:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: passwordCity
       POSTGRES_DB: primary
+      POSTGRES_HOST_AUTH_METHOD: password # Froq support: https://hub.docker.com/_/postgres#postgres_host_auth_method
     ports:
       - "5432"
     volumes:
