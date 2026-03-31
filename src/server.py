@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 import os
 from psycopg_pool import AsyncConnectionPool
 import src.lib.Puzzle as Puzzle
@@ -10,8 +11,7 @@ import src.lib.Puzzle as Puzzle
 ########################################
 async def db_create_tables(pool:AsyncConnectionPool) -> None:
     async with pool.connection() as conn:
-        async with conn.cursor() as cursor:
-            await cursor.execute("""
+        await conn.execute("""
 CREATE TABLE IF NOT EXISTS solves (
   id SERIAL PRIMARY KEY,
   puzzle_id TEXT NOT NULL,
@@ -21,14 +21,16 @@ CREATE TABLE IF NOT EXISTS solves (
 """)
 
 
+
+
+db_pool = AsyncConnectionPool(conninfo=os.getenv("DATABASE_URL"),open=False)
 @asynccontextmanager
 async def fastapi_lifespan(app:FastAPI):
-    app.db_pool = AsyncConnectionPool(conninfo=os.getenv("DATABASE_URL"),open=False)
-    await app.db_pool.open()
-    # app.db_pool = AsyncConnectionPool(conninfo=os.getenv("DATABASE_URL"))
-    await db_create_tables(app.db_pool)
+    await db_pool.open()
+    app.state.db_pool = db_pool # This makes it available in all instances of FastAPI
+    await db_create_tables(db_pool)
     yield
-    await app.db_pool.close()
+    await db_pool.close()
 
 
 # Lifespan only applies to top-level instances:
@@ -86,4 +88,46 @@ async def get_word_for_puzzle(puzzle_id:str, word:str):
         "puzzle_id": puzzle_id,
         "region_id": region_id,
         "region_matches": [match.label for match in criteria_matches]
+    }
+
+
+# This object describes the shape of the request body for the POSTing of Solutions
+class SolutionBody(BaseModel):
+    solveTimeSeconds:int
+
+@api.post("/puzzles/{puzzle_id}/solutions")
+async def solve_puzzle(puzzle_id:str, s:SolutionBody):
+    """Submit a solution for a Puzzle and save it"""
+    puzzle = Puzzle.get_by_id(puzzle_id)
+    if not puzzle:
+        raise HTTPException(status_code=404, detail="Puzzle not found")
+
+    async with db_pool.connection() as conn:
+        await conn.execute("""
+            INSERT INTO solves (puzzle_id, solve_time_seconds)
+            VALUES (%s, %s)
+            """, (puzzle_id, s.solveTimeSeconds))
+
+    return { "success": True }
+
+@api.get("/puzzles/{puzzle_id}/stats")
+async def get_puzzle_stats(puzzle_id:str):
+    """Get play summary for a Puzzle"""
+    puzzle = Puzzle.get_by_id(puzzle_id)
+    if not puzzle:
+        raise HTTPException(status_code=404, detail="Puzzle not found")
+
+    async with db_pool.connection() as conn:
+        query = await conn.execute("""
+        SELECT
+            COUNT(*)::int AS "playersSolved",
+            ROUND(AVG(solve_time_seconds))::int AS "averageTime"
+        FROM solves
+        WHERE puzzle_id = %s
+        """, (puzzle_id,))
+    players_solved, avg_time = await query.fetchone()
+
+    return {
+        "playersSolved": 0 if players_solved is None else players_solved,
+        "averageTime": 0 if avg_time is None else avg_time
     }
