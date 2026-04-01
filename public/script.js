@@ -65,7 +65,6 @@
   let labelC = "C";
 
   let puzzleData = null;
-  let validWords = null;
 
   let tutorialStep = 0;
   let flashingMask = 0;
@@ -505,23 +504,22 @@ for (let mask = 1; mask <= 7; mask++) {
     }
   }
 
-  function wordBelongsInRegion(word, mask) {
-    if (!validWords) return false;
-    const regionList = validWords[String(mask)] || [];
-    return regionList.includes(word);
-  }
+  async function findRegionForWord(word) {
+    let regionId = 0;
 
-  function findRegionForWord(word) {
-    if (!validWords) return 0;
+    // TODO: Ensure no spaces in word - in that case it would certainly be invalid,
+    //       so raise an error here and don't even bother sending to server
 
-    for (let mask = 1; mask <= 7; mask++) {
-      const regionList = validWords[String(mask)] || [];
-      if (regionList.includes(word)) {
-        return mask;
-      }
+    try {
+      const response = await fetch(`/api/puzzles/${encodeURIComponent(puzzleData.id)}/words/${encodeURIComponent(word)}`);
+      const regionInfo = await response.json();
+      regionId = regionInfo.region_id;
+      console.log(`Word "${word}" is in region ${regionId}`);
+    } catch (err) {
+      console.error("Failed to issue word check against API:", err);
     }
 
-    return 0;
+    return regionId;
   }
 
   function flashRegion(mask) {
@@ -562,13 +560,12 @@ for (let mask = 1; mask <= 7; mask++) {
     if (!puzzleData?.id) return;
 
     try {
-      const response = await fetch("/api/solve", {
+      const response = await fetch(`/api/puzzles/${encodeURIComponent(puzzleData.id)}/solutions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          puzzleId: puzzleData.id,
           solveTimeSeconds
         })
       });
@@ -583,7 +580,7 @@ for (let mask = 1; mask <= 7; mask++) {
     }
   }
 
-  function submitWord() {
+  async function submitWord() {
     if (!gameStarted || tutorialMode || puzzleCompleted) return;
 
     const word = wordInput.value.trim().toLowerCase();
@@ -595,22 +592,15 @@ for (let mask = 1; mask <= 7; mask++) {
       return;
     }
 
-    if (!puzzleData || !validWords) {
+    if (!puzzleData) {
       statusMessage.textContent = "Puzzle data not loaded.";
       statusMessage.style.color = "#c62828";
       animateInputError();
       return;
     }
 
-    // check dictionary first
-if (!dictionary || !dictionary.has(word)) {
-  statusMessage.textContent = "That word is not in the dictionary.";
-  statusMessage.style.color = "#c62828";
-  animateInputError();
-  return;
-}
 
-const mask = findRegionForWord(word);
+const mask = await findRegionForWord(word);
 
 if (!mask) {
   statusMessage.textContent = "That word doesn't belong in any region.";
@@ -641,7 +631,7 @@ if (!mask) {
     if (!puzzleData?.id) return;
 
     try {
-      const response = await fetch(`/api/stats/${encodeURIComponent(puzzleData.id)}`);
+      const response = await fetch(`/api/puzzles/${encodeURIComponent(puzzleData.id)}/stats`);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
@@ -739,23 +729,12 @@ if (!mask) {
 
   async function loadPuzzleData() {
     try {
-      const response = await fetch('/api/puzzle');
+      const response = await fetch('/api/puzzles/current');
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
 
       puzzleData = await response.json();
-validWords = puzzleData.regions;
-
-// load dictionary
-const dictResponse = await fetch('/dictionary.txt');
-const dictText = await dictResponse.text();
-dictionary = new Set(
-  dictText
-    .split('\n')
-    .map(w => w.trim().toLowerCase())
-    .filter(Boolean)
-);
 
       if (puzzleData.labels) {
         labelA = puzzleData.labels.A || labelA;
@@ -775,8 +754,8 @@ dictionary = new Set(
       renderStreak();
       await loadStats();
     } catch (err) {
-      console.error("Failed to load puzzleData.json:", err);
-      alert("Could not load puzzleData.json");
+      console.error("Failed to load Puzzle data:", err);
+      alert("Could not load Puzzle data");
     }
   }
 
@@ -915,10 +894,10 @@ drawBase();
 
   submitWordBtn.addEventListener('click', submitWord);
 
-  wordInput.addEventListener('keydown', (e) => {
+  wordInput.addEventListener('keydown', async (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      submitWord();
+      await submitWord();
     }
   });
 
