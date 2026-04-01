@@ -35,3 +35,26 @@ class TestPuzzle(unittest.TestCase):
                 res = self.puzzle.get_region_for_word(case["word"])
                 self.assertEqual(res[0], case["expected_region"], msg=f"Region ID test failed for Region {case["expected_region"]} using word {case["word"]}")
                 self.assertEqual(res[1], case["expected_criteria_matches"], msg=f"Criteria test failed for Region {case["expected_region"]} using word {case["word"]}")
+
+    def test_successful_solve(self):
+        """A valid submission is marked as True"""
+        result = self.puzzle.solve_with(["tester", "something", "rabbit", "reservoir", "rebuttal", "butter", "abattoir"])
+        self.assertTrue(result)
+
+    def test_solution_failure_too_few(self):
+        """A ValueError is raised if there are too few submissions"""
+        with self.assertRaises(ValueError):
+            # The configured test puzzle requires 7 regions; providing six
+            self.puzzle.solve_with(["one", "two", "three", "four", "five", "six"])
+
+    def test_solution_failure_unmapped_region(self):
+        """A ValueError is raised if there is any submission of Region 0"""
+        with self.assertRaises(ValueError):
+            # "test" is the invalid input for this puzzle; place in the middle to triangulate
+            self.puzzle.solve_with(["something", "rabbit", "reservoir", "test", "rebuttal", "butter", "abattoir"])
+
+    def test_solution_failure_overlapping_regions(self):
+        """A ValueError is raised if there are multiple submissions from the same region"""
+        with self.assertRaises(ValueError):
+            # "rabbit" and "sabbath" overlap regions in an otherwise complete set
+            self.puzzle.solve_with(["tester", "something", "rabbit", "sabbath", "rebuttal", "butter", "abattoir"])
