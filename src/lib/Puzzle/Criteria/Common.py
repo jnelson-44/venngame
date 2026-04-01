@@ -29,7 +29,7 @@ class HasDoubleLetters(Criterion):
 
     def is_satisfied_by(self, solution:str) -> bool:
         prev_letter:str = solution[0]
-        for i in range(1, len(solution)-1):
+        for i in range(1, len(solution)):
             if str.lower(solution[i]) == str.lower(prev_letter):
                 return True
             prev_letter = solution[i]

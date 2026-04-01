@@ -4,7 +4,7 @@ from math import inf
 class LengthCriterion(Criterion):
     def __init__(self, min_len:float = 0, max_len:float = inf):
 
-        if min_len <= 0 or min_len > max_len:
+        if min_len < 0 or min_len > max_len or max_len == 0:
             raise ValueError(f"Invalid LengthCriterion inputs {min_len} and {max_len}")
 
         label = f"Between {min_len} and {max_len} letters long"

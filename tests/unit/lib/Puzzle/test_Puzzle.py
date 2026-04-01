@@ -1,0 +1,37 @@
+import unittest
+
+from src.lib.Puzzle.Criteria import Common, Length
+from src.lib.Puzzle import *
+
+class TestPuzzle(unittest.TestCase):
+    def setUp(self):
+        self.criteria = [
+            Common.EndsWithLetter("r"),
+            Length.AtLeastLength(8),
+            Common.HasDoubleLetters()
+        ]
+        self.puzzle = Puzzle("test-puzz", self.criteria)
+
+    def test_get_name(self):
+        """Primitive test case: Get the name of the Puzzle"""
+        result = self.puzzle.id
+        self.assertEqual("test-puzz", result)
+
+    def test_region_mapping(self):
+        """Each Region is correctly mapped"""
+        test_cases = [
+            {"word": "test",      "expected_region": 0, "expected_criteria_matches": []},
+            {"word": "tester",    "expected_region": 1, "expected_criteria_matches": [self.criteria[0]]},
+            {"word": "something", "expected_region": 2, "expected_criteria_matches": [self.criteria[1]]},
+            {"word": "rabbit",    "expected_region": 4, "expected_criteria_matches": [self.criteria[2]]},
+            {"word": "reservoir", "expected_region": 3, "expected_criteria_matches": [self.criteria[0], self.criteria[1]]},
+            {"word": "rebuttal",  "expected_region": 6, "expected_criteria_matches": [self.criteria[1], self.criteria[2]]},
+            {"word": "butter",    "expected_region": 5, "expected_criteria_matches": [self.criteria[0], self.criteria[2]]},
+            {"word": "abattoir",  "expected_region": 7, "expected_criteria_matches": [self.criteria[0], self.criteria[1], self.criteria[2]]},
+        ]
+
+        for case in test_cases:
+            with self.subTest(msg=f"Region {case["expected_region"]}"):
+                res = self.puzzle.get_region_for_word(case["word"])
+                self.assertEqual(res[0], case["expected_region"], msg=f"Region ID test failed for Region {case["expected_region"]} using word {case["word"]}")
+                self.assertEqual(res[1], case["expected_criteria_matches"], msg=f"Criteria test failed for Region {case["expected_region"]} using word {case["word"]}")
