@@ -33,14 +33,14 @@ class Puzzle:
 
     def solve_with(self, inputs:list[str]) -> bool:
         expected_region_count = 7
-        if len(inputs) is not expected_region_count:
+        if len(inputs) != expected_region_count:
             raise ValueError(f"Solution incomplete: Expecting {expected_region_count} words but received {len(inputs)}")
         regions_found = set()
         for i in range(0, len(inputs)):
             if not word_exists(inputs[i]):
                 raise ValueError(f"Solution incomplete. Invalid word \"{inputs[i]}\" found in submission.")
             region_id = self.get_region_for_word(inputs[i])[0]
-            if region_id is 0:
+            if region_id == 0:
                 raise ValueError(f"Solution incomplete: Word \"{inputs[i]}\" matches no criteria.")
             if region_id in regions_found:
                 raise ValueError(f"Solution incomplete: Region {region_id} overloaded.")
