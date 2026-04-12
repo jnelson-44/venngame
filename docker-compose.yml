@@ -2,7 +2,7 @@ services:
   app:
     build: .
     ports:
-      - "8000"
+      - "8000:8000"
     volumes:
       - .:/app
     environment:
@@ -20,7 +20,7 @@ services:
       POSTGRES_DB: primary
       POSTGRES_HOST_AUTH_METHOD: password # Froq support: https://hub.docker.com/_/postgres#postgres_host_auth_method
     ports:
-      - "5432"
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
