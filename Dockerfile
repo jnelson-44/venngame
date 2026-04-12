@@ -1,12 +1,21 @@
-FROM node:20-alpine
+FROM python:3.14-slim
 
+RUN useradd -m -r appuser && \
+   mkdir /app && \
+   chown -R appuser /app
 WORKDIR /app
 
-COPY . .
-RUN npm ci --only=production
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-ENV NODE_ENV=production
+RUN pip install --upgrade pip
 
-EXPOSE 3000
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["npm", "run", "start"]
+COPY --chown=appuser:appuser . .
+
+USER appuser
+EXPOSE 8000
+
+CMD ["fastapi", "run", "--port", "8000"]
