@@ -566,6 +566,7 @@ for (let mask = 1; mask <= 7; mask++) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
+          words: Object.values(notes),
           solveTimeSeconds
         })
       });
