@@ -1,3 +1,4 @@
+from src.lib import Dictionary
 from src.lib.Puzzle.Criteria import Criterion
 from src.lib.Puzzle.Config import puzzle_config
 
@@ -10,11 +11,6 @@ def get_by_id(puzz_id:str) -> Puzzle | None:
     if puzz_id in puzzle_config:
         return Puzzle(puzz_id, puzzle_config[puzz_id])
     return None
-
-
-def word_exists(word:str) -> bool:
-    # TODO: Validate against Dictionary
-    return True
 
 class Puzzle:
     def __init__(self, id:str, criteria:list[Criterion]):
@@ -31,13 +27,13 @@ class Puzzle:
                 matches.append(self.criteria[i])
         return mask, matches
 
-    def solve_with(self, inputs:list[str]) -> bool:
+    async def solve_with(self, inputs:list[str]) -> bool:
         expected_region_count = 7
         if len(inputs) != expected_region_count:
             raise ValueError(f"Solution incomplete: Expecting {expected_region_count} words but received {len(inputs)}")
         regions_found = set()
         for i in range(0, len(inputs)):
-            if not word_exists(inputs[i]):
+            if not await Dictionary.word_exists(inputs[i]):
                 raise ValueError(f"Solution incomplete. Invalid word \"{inputs[i]}\" found in submission.")
             region_id = self.get_region_for_word(inputs[i])[0]
             if region_id == 0:
