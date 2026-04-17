@@ -76,9 +76,6 @@
   let hoveredMask = 0;
   let clickedMaskTimeout = null;
 
-
-  let dictionary = null;
-
   const notes = {};
 
   const tutorialLabels = {
@@ -512,6 +509,10 @@ for (let mask = 1; mask <= 7; mask++) {
 
     try {
       const response = await fetch(`/api/puzzles/${encodeURIComponent(puzzleData.id)}/words/${encodeURIComponent(word)}`);
+      if (response.status === 404) {
+        console.log(`Word "${word}" is not in dictionary`);
+        return -1;
+      }
       const regionInfo = await response.json();
       regionId = regionInfo.region_id;
       console.log(`Word "${word}" is in region ${regionId}`);
@@ -601,6 +602,13 @@ for (let mask = 1; mask <= 7; mask++) {
 
 
 const mask = await findRegionForWord(word);
+
+    if (mask === -1) {
+      statusMessage.textContent = "That word is not in the dictionary.";
+      statusMessage.style.color = "#c62828";
+      animateInputError();
+      return;
+    }
 
 if (!mask) {
   statusMessage.textContent = "That word doesn't belong in any region.";

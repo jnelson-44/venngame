@@ -27,6 +27,17 @@ root.mount("/api", api)
 root.mount("/", StaticFiles(directory="public",html=True), name="static")
 
 
+# TODO: Move this to the Domain area and make the Database shareable
+########################################
+# DATABASE HELPERS                     #
+########################################
+async def word_exists(word:str) -> bool:
+    async with db_pool.connection() as conn:
+        query = await conn.execute("SELECT word FROM dictionary WHERE word = %s", (word,))
+    result = await query.fetchone()
+    return bool(result)
+
+
 
 ########################################
 # API ROUTES and VIEWS                 #
@@ -64,7 +75,7 @@ async def get_word_for_puzzle(puzzle_id:str, word:str):
     puzzle = Puzzle.get_by_id(puzzle_id)
     if not puzzle:
         raise HTTPException(status_code=404, detail="Puzzle not found")
-    if not Puzzle.word_exists(word):
+    if not await word_exists(word):
         raise HTTPException(status_code=404, detail="Word does not exist")
     region_id, criteria_matches = puzzle.get_region_for_word(word)
     return {
