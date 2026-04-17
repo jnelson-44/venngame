@@ -1,0 +1,14 @@
+
+CREATE TABLE IF NOT EXISTS solves
+(
+  id SERIAL PRIMARY KEY,
+  puzzle_id TEXT NOT NULL,
+  solve_time_seconds INTEGER NOT NULL,
+  solved_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS dictionary
+(
+   id   SERIAL PRIMARY KEY,
+   word TEXT UNIQUE NOT NULL
+);

@@ -9,26 +9,11 @@ import src.lib.Puzzle as Puzzle
 ########################################
 # DATABASE & SERVER INIT               #
 ########################################
-async def db_create_tables(pool:AsyncConnectionPool) -> None:
-    async with pool.connection() as conn:
-        await conn.execute("""
-CREATE TABLE IF NOT EXISTS solves (
-  id SERIAL PRIMARY KEY,
-  puzzle_id TEXT NOT NULL,
-  solve_time_seconds INTEGER NOT NULL,
-  solved_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-""")
-
-
-
-
 db_pool = AsyncConnectionPool(conninfo=os.getenv("DATABASE_URL"),open=False)
 @asynccontextmanager
 async def fastapi_lifespan(app:FastAPI):
     await db_pool.open()
     app.state.db_pool = db_pool # This makes it available in all instances of FastAPI
-    await db_create_tables(db_pool)
     yield
     await db_pool.close()
 

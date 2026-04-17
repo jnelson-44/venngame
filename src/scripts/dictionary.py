@@ -23,26 +23,13 @@ def get_dsn(dsn:str=None) -> str:
     return dsn
 
 
-async def db_table_dictionary_drop(pool:AsyncConnectionPool) -> None:
+async def db_table_dictionary_clear(pool:AsyncConnectionPool) -> None:
     """
     Drops the dictionary table, if it exists
     """
     async with pool.connection() as conn:
         await conn.execute("""
-DROP TABLE IF EXISTS dictionary
-""")
-
-async def db_table_dictionary_create(pool:AsyncConnectionPool) -> None:
-    """
-    Creates the dictionary table, if it does not exist
-    """
-    async with pool.connection() as conn:
-        await conn.execute("""
-CREATE TABLE dictionary
-(
-   id   SERIAL PRIMARY KEY,
-   word TEXT UNIQUE NOT NULL
-);
+TRUNCATE TABLE dictionary
 """)
 
 
@@ -74,10 +61,8 @@ async def _db_import(file:str, dsn:str, batch_size:int=BATCH_SIZE, debug:bool=Fa
     pool = AsyncConnectionPool(dsn, open=False)
     await pool.open()
 
-    if debug: print("Dropping dictionary table")
-    await db_table_dictionary_drop(pool)
-    if debug: print("Creating dictionary table")
-    await db_table_dictionary_create(pool)
+    if debug: print("Clearing dictionary table")
+    await db_table_dictionary_clear(pool)
 
     async def insert_batch(cur, batch, debug=False):
         if debug: print("Inserting batch")
