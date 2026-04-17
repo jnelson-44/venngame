@@ -1,4 +1,4 @@
-.PHONY: build clean start test-unit test-unit-v dict-local-import dict-local-freeze
+.PHONY: build clean start test-unit test-unit-v dict-local-import
 
 build:
 	docker compose build
@@ -17,6 +17,4 @@ test-unit-v:
 
 dict-local-import:
 	docker exec -it venngame-app-1 python ./src/scripts/dictionary.py import ./src/data/dictionary.txt
-
-dict-local-freeze:
 	docker exec -it venngame-db-1 pg_dump -U root -d primary -t dictionary --data-only > ./container/db/primary/01-dictionary.sql
