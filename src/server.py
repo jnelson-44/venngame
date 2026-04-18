@@ -1,22 +1,18 @@
 from contextlib import asynccontextmanager
+from .lib import Database, Dictionary, Puzzle
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-import os
-from psycopg_pool import AsyncConnectionPool
-import src.lib.Puzzle as Puzzle
 
 ########################################
-# DATABASE & SERVER INIT               #
+# SERVER INIT                          #
 ########################################
-db_pool = AsyncConnectionPool(conninfo=os.getenv("DATABASE_URL"),open=False)
 @asynccontextmanager
 async def fastapi_lifespan(app:FastAPI):
-    await db_pool.open()
-    app.state.db_pool = db_pool # This makes it available in all instances of FastAPI
+    await Database.db_pool.open()
+    app.state.db_pool = Database.db_pool # This makes it available in all instances of FastAPI
     yield
-    await db_pool.close()
-
+    await Database.db_pool.close()
 
 # Lifespan only applies to top-level instances:
 #  https://fastapi.tiangolo.com/advanced/events/#sub-applications
@@ -25,17 +21,6 @@ api  = FastAPI()
 
 root.mount("/api", api)
 root.mount("/", StaticFiles(directory="public",html=True), name="static")
-
-
-# TODO: Move this to the Domain area and make the Database shareable
-########################################
-# DATABASE HELPERS                     #
-########################################
-async def word_exists(word:str) -> bool:
-    async with db_pool.connection() as conn:
-        query = await conn.execute("SELECT word FROM dictionary WHERE word = %s", (word,))
-    result = await query.fetchone()
-    return bool(result)
 
 
 
@@ -75,7 +60,7 @@ async def get_word_for_puzzle(puzzle_id:str, word:str):
     puzzle = Puzzle.get_by_id(puzzle_id)
     if not puzzle:
         raise HTTPException(status_code=404, detail="Puzzle not found")
-    if not await word_exists(word):
+    if not await Dictionary.word_exists(word):
         raise HTTPException(status_code=404, detail="Word does not exist")
     region_id, criteria_matches = puzzle.get_region_for_word(word)
     return {
@@ -98,7 +83,7 @@ async def solve_puzzle(puzzle_id:str, s:SolutionBody):
     if not puzzle:
         raise HTTPException(status_code=404, detail="Puzzle not found")
 
-    async with db_pool.connection() as conn:
+    async with Database.db_pool.connection() as conn:
         await conn.execute("""
             INSERT INTO solves (puzzle_id, solve_time_seconds)
             VALUES (%s, %s)
@@ -113,7 +98,7 @@ async def get_puzzle_stats(puzzle_id:str):
     if not puzzle:
         raise HTTPException(status_code=404, detail="Puzzle not found")
 
-    async with db_pool.connection() as conn:
+    async with Database.db_pool.connection() as conn:
         query = await conn.execute("""
         SELECT
             COUNT(*)::int AS "playersSolved",
