@@ -14,7 +14,7 @@ class EndsWithLetter(Criterion):
 
 class StartsWithLetter(Criterion):
     def __init__(self, letter:str):
-        super().__init__(f"Must begin with the letter {letter}")
+        super().__init__(f"Begins with {str.upper(letter)}")
         self.letter = letter
 
     def is_satisfied_by(self, solution:str) -> bool:

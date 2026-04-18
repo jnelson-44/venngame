@@ -2,7 +2,7 @@ from src.lib.Puzzle.Criteria import Criterion
 from math import inf
 
 class LengthCriterion(Criterion):
-    def __init__(self, min_len:float = 0, max_len:float = inf):
+    def __init__(self, min_len:int = 0, max_len:int = inf):
 
         if min_len < 0 or min_len > max_len or max_len == 0:
             raise ValueError(f"Invalid LengthCriterion inputs {min_len} and {max_len}")
