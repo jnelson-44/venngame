@@ -4,6 +4,7 @@ import typer
 from pathlib import Path
 from psycopg_pool import AsyncConnectionPool
 from rich import print
+from src.lib import Database
 from typing import Annotated
 
 app = typer.Typer(no_args_is_help=True)
@@ -29,7 +30,7 @@ async def db_table_dictionary_clear(pool:AsyncConnectionPool) -> None:
     """
     async with pool.connection() as conn:
         await conn.execute("""
-TRUNCATE TABLE dictionary
+TRUNCATE TABLE dictionary RESTART IDENTITY
 """)
 
 
@@ -58,40 +59,39 @@ async def _db_import(file:str, dsn:str, batch_size:int=BATCH_SIZE, debug:bool=Fa
     if not Path(file).exists():
         raise RuntimeError(f"Unable to locate file {file}")
 
-    pool = AsyncConnectionPool(dsn, open=False)
-    await pool.open()
+    Database.init(dsn)
+    async with Database.get_pool() as pool:
+        if debug: print("Clearing dictionary table")
+        await db_table_dictionary_clear(pool)
 
-    if debug: print("Clearing dictionary table")
-    await db_table_dictionary_clear(pool)
+        async def insert_batch(cur, batch, debug=False):
+            if debug: print("Inserting batch")
+            await cur.executemany(
+                "INSERT INTO dictionary (word) VALUES (%s) ON CONFLICT DO NOTHING",
+                batch
+            )
 
-    async def insert_batch(cur, batch, debug=False):
-        if debug: print("Inserting batch")
-        await cur.executemany(
-            "INSERT INTO dictionary (word) VALUES (%s) ON CONFLICT DO NOTHING",
-            batch
-        )
+        async with pool.connection() as conn:
+            async with conn.cursor() as cur:
+                batch = []
+                count = 0
+                with open(file, "r") as f:
+                    for line in f:
+                        word = line.strip()
+                        if not word:
+                            continue
+                        word = word.lower()
+                        batch.append((word,))
+                        count = count + 1
+                        if debug: print(f"Queuing {word}")
 
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            batch = []
-            count = 0
-            with open(file, "r") as f:
-                for line in f:
-                    word = line.strip()
-                    if not word:
-                        continue
-                    word = word.lower()
-                    batch.append((word,))
-                    count = count + 1
-                    if debug: print(f"Queuing {word}")
-
-                    if len(batch) >= batch_size:
+                        if len(batch) >= batch_size:
+                            await insert_batch(cur, batch, debug)
+                            batch.clear()
+                    if len(batch) > 0:
                         await insert_batch(cur, batch, debug)
-                        batch.clear()
-                if len(batch) > 0:
-                        await insert_batch(cur, batch, debug)
-        await conn.commit()
-        print(f"""[green]DONE.[/green] Inserted {count} words into the dictionary table""")
+            await conn.commit()
+            print(f"""[green]DONE.[/green] Inserted {count} words into the dictionary table""")
 
 
 ###########################################
