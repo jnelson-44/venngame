@@ -18,9 +18,12 @@ def get_dsn(dsn:str=None) -> str:
     """
     if dsn:
         return dsn
-    dsn = os.getenv("DATABASE_URL")
+    dsn = os.getenv("VENNGAME_DATABASE_URL") \
+        if os.getenv("VENNGAME_DATABASE_URL") is not None \
+        else os.getenv("DATABASE_URL")
     if not dsn:
-        raise RuntimeError("Must provide --dsn option or DATABASE_URL environment variable")
+        print("Must provide --dsn option or DATABASE_URL (or VENNGAME_DATABASE_URL) environment variable")
+        exit(1)
     return dsn
 
 
@@ -57,7 +60,8 @@ async def _db_import(file:str, dsn:str, batch_size:int=BATCH_SIZE, debug:bool=Fa
     if debug: print("Debug mode enabled")
 
     if not Path(file).exists():
-        raise RuntimeError(f"Unable to locate file {file}")
+        print(f"Unable to locate file {file}")
+        exit(1)
 
     Database.init(dsn)
     async with Database.get_pool() as pool:
@@ -106,7 +110,9 @@ def file_normalize(
     Prints the normalized dictionary from the given file as it would be imported into the database.
     """
     if not Path(filename).exists():
-        raise RuntimeError(f"Unable to locate file {filename}")
+        print(f"Unable to locate file {filename}")
+        exit(1)
+
     with open(filename, "r") as f:
         for line in f:
             word = line.strip()

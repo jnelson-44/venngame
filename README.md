@@ -49,12 +49,45 @@ For more verbose output, use `make test-unit-v`.
 
 See the [`Makefile`](./Makefile) for more details.
 
+## Script Helpers
+This project contains multiple scripts that can be executed to assist in managing and evaluating the application.
+These scripts are stored in the [`./src/scripts/`](./src/scripts) directory.
+
+Several of these scripts require a database connection to perform their work. There are multiple ways to provide these to the scripts - the only
+requirement is that the DSN string used conforms to the `RFC-3986` standard for database URIs, e.g., `dbtype://user:pass@host:port/dbname`.
+
+Use the `--help` switch for each script's subcommands to see if they require a DSN.  If they do, it may be provided using the
+`--dsn` option, e.g., `--dsn="dbtype://user:pass@host:port/dbname"`.
+As this can get quite cumbersome to provide repeatedly, it is also possible to set the Environment Variable `DATABASE_URL` and the script
+will read from that instead.  To avoid collisions with any other applications, the `VENNGAME_DATABASE_URL` could also be used if desired.
+
+For example, the following sets of commands produce the same output by connecting to the same database:
+```shell
+# Using --dsn flag
+python -m src.scripts.puzzle get-region-hits --dsn="postgres://root:passwordCity@localhost:5432/primary" 2026-03-27
+
+# Using Environment Variable
+export VENNGAME_DATABASE_URL="postgres://root:passwordCity@localhost:5432/primary"
+python -m src.scripts.puzzle get-region-hits 2026-03-27
+```
+The latter is clearly much simpler, and the Environment Variable will remain set as long as the terminal session remains open.
+It can also be rewritten to the production database, another testing database, etc.  When using this approach, make sure to
+`print $VENNGAME_DATABASE_URL` and/or `print $DATABASE_URL` to make sure you know which database is being used for the script's
+execution.
+
 ## Dictionary Management
 The raw dictionary is stored in [`./src/data/dictionary.txt`](./src/data/dictionary.txt), but this project supports the
 ability to import these words into the database for improved querying and performance.  The script file [`./src/scripts/dictionary.py`](./src/scripts/dictionary.py)
-can be run to do this against any database using a standard `RFC-3986`-compliant URI of the form `dbtype://user:pass@host:port/dbname`.
+can be run to do this against any database by passing in the desired DSN as described above.
 
 Run `python -m src.scripts.dictionary --help` for more information about the script's usage.
+
+The following sections assume an Environment Variable has been set and exported into the session, such as:
+```shell
+export DATABASE_URL="postgres://root:passwordCity@localhost:5432/primary" 
+```
+Change this to the local database (above, assuming Docker usage), or to the production database as desired.  Alternatively, provide
+the `--dsn` flag, which will always take precedence.
 
 ### Importing to a Local or Remote Database
 The `import` command will take a given `dictionary.txt` file and write it to the database. **Note** that this is destructive, so any
@@ -62,7 +95,7 @@ changes made directly in the database that do not exist in the dictionary file w
 
 For example, to import the local dictionary file into a running version of the local database, run:
 ```shell
-python -m src.scripts.dictionary import --dsn="postgres://root:passwordCity@localhost:5432/primary" ./src/data/dictionary.txt
+python -m src.scripts.dictionary import ./src/data/dictionary.txt
 ```
 The above would be the style of command to run against the production database whenever a change is made.
 
@@ -93,7 +126,7 @@ Combining the concepts from the above, a dictionary update workflow would look a
 (making sure to paste in the production DB credentials)
 1. Commit the changed [`dictionary.txt` file](./src/data/dictionary.txt) and the [dictionary fixture file](./container/db/primary/01-dictionary.sql) to Git
 
-## Summary of Commands
+## Summary of Local Development Commands
 From the project root:
 ```shell
 # Build the project
@@ -111,3 +144,50 @@ make test-unit
 # Update local database with local dictionary
 make dict-local-import
 ```
+
+## Puzzle Information Scripts
+The [`./src/scripts/puzzle.py`](./src/scripts/puzzle.py) script can be used to get basic information about a configured puzzle in the system.
+Run `python -m src.scripts.puzzle --help` for more information.
+
+Again, a DSN is assumed to be set in an Environment Variable as described above, otherise the `--dsn` switch must be provided for some subcommands.
+
+### Get Basic Puzzle Info
+Use the command `python -m src.scripts.puzzle info {PUZZLE_ID}` to get basic information about a puzzle, if configured.
+
+Example:
+```shell
+python -m src.scripts.puzzle info 2026-03-27
+
+Puzzle Name: 2026-03-27
+
+Region A: Ends with R
+Region B: At least 8 letters
+Region C: Has double letters
+```
+See `python -m src.scripts.puzzle info --help` for more information.
+
+### Get Region Hit Count
+It may be helpful to see how many matches there are across a live (database) dictionary for a given puzzle.
+Use the command `python -m src.scripts.puzzle get-region-hits {PUZZLE_ID}` to get this information for a configured puzzle.
+
+Example:
+```shell
+python -m src.scripts.puzzle get-region-hits 2026-03-27
+Compiling Region Hit information for Puzzle 2026-03-27...
+
+Puzzle Name: 2026-03-27
+
+Region A: Ends with R
+Region B: At least 8 letters
+Region C: Has double letters
+
+         A:   3399
+         B:  88453
+         C:   8703
+     A & B:   4176
+     B & C:  30736
+     C & A:   1042
+ A & B & C:   1425
+      None:  40757
+```
+See `python -m src.scripts.puzzle get-region-hits --help` for more information.
