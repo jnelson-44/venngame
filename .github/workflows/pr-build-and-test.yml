@@ -1,0 +1,25 @@
+name: Build and Test PR
+run-name: Create/Update PR by ${{ github.actor }}
+on:
+  pull_request:
+    branches:
+      - main # Only triggers when the target of the PR is the primary branch
+
+env:
+  IMAGE_NAME: venngame-pr-${{ github.event.pull_request.number || github.sha }}
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - run: echo "🎉 Build started!"
+      - run: echo "🔎 The ref name is ${{ github.ref }} in repository ${{ github.repository }}."
+      - name: Cloning ${{ github.repository }}
+        uses: actions/checkout@v6
+      - name: 🔨Build Image
+        run: docker build -t $IMAGE_NAME .
+      - name: 🧐 Run Unit Tests
+        run: docker run --rm $IMAGE_NAME:latest python -m unittest discover -s ./tests/unit/lib
+      - run: echo "🍏 This job has completed with status ${{ job.status }}."
