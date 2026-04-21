@@ -80,6 +80,7 @@ async def get_word_for_puzzle(puzzle_id:str, word:str):
 # This object describes the shape of the request body for the POSTing of Solutions
 class SolutionBody(BaseModel):
     solveTimeSeconds:int
+    words:list[str]
 
 @api.post("/puzzles/{puzzle_id}/solutions")
 async def solve_puzzle(puzzle_id:str, s:SolutionBody):
@@ -87,6 +88,12 @@ async def solve_puzzle(puzzle_id:str, s:SolutionBody):
     puzzle = Puzzle.get_by_id(puzzle_id)
     if not puzzle:
         raise HTTPException(status_code=404, detail="Puzzle not found")
+    try:
+        solved:bool = await puzzle.solve_with(s.words)
+        if not solved:
+            raise RuntimeError("Invalid solution")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     async with Database.get_pool().connection() as conn:
         await conn.execute("""
