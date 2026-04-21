@@ -1,18 +1,23 @@
+import os
 from contextlib import asynccontextmanager
-from .lib import Database, Dictionary, Puzzle
+from src.lib import Database, Dictionary, Puzzle
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 ########################################
-# SERVER INIT                          #
+# DATABASE & SERVER INIT               #
 ########################################
+Database.init(os.getenv("DATABASE_URL"))
+
 @asynccontextmanager
 async def fastapi_lifespan(app:FastAPI):
-    await Database.db_pool.open()
-    app.state.db_pool = Database.db_pool # This makes it available in all instances of FastAPI
+    pool = Database.get_pool()
+    await pool.open()
+    # This makes it available in *all* instances of FastAPI ("state" is shared)
+    app.state.db_pool = pool
     yield
-    await Database.db_pool.close()
+    await pool.close()
 
 # Lifespan only applies to top-level instances:
 #  https://fastapi.tiangolo.com/advanced/events/#sub-applications
@@ -83,7 +88,7 @@ async def solve_puzzle(puzzle_id:str, s:SolutionBody):
     if not puzzle:
         raise HTTPException(status_code=404, detail="Puzzle not found")
 
-    async with Database.db_pool.connection() as conn:
+    async with Database.get_pool().connection() as conn:
         await conn.execute("""
             INSERT INTO solves (puzzle_id, solve_time_seconds)
             VALUES (%s, %s)
@@ -98,7 +103,7 @@ async def get_puzzle_stats(puzzle_id:str):
     if not puzzle:
         raise HTTPException(status_code=404, detail="Puzzle not found")
 
-    async with Database.db_pool.connection() as conn:
+    async with Database.get_pool().connection() as conn:
         query = await conn.execute("""
         SELECT
             COUNT(*)::int AS "playersSolved",

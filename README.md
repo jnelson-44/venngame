@@ -54,7 +54,7 @@ The raw dictionary is stored in [`./src/data/dictionary.txt`](./src/data/diction
 ability to import these words into the database for improved querying and performance.  The script file [`./src/scripts/dictionary.py`](./src/scripts/dictionary.py)
 can be run to do this against any database using a standard `RFC-3986`-compliant URI of the form `dbtype://user:pass@host:port/dbname`.
 
-Run `python ./src/scripts/dictionary.py --help` for more information about the script's usage.
+Run `python -m src.scripts.dictionary --help` for more information about the script's usage.
 
 ### Importing to a Local or Remote Database
 The `import` command will take a given `dictionary.txt` file and write it to the database. **Note** that this is destructive, so any
@@ -62,11 +62,11 @@ changes made directly in the database that do not exist in the dictionary file w
 
 For example, to import the local dictionary file into a running version of the local database, run:
 ```shell
-python ./src/scripts/dictionary.py import --dsn="postgres://root:passwordCity@localhost:5432/primary" ./src/data/dictionary.txt
+python -m src.scripts.dictionary import --dsn="postgres://root:passwordCity@localhost:5432/primary" ./src/data/dictionary.txt
 ```
 The above would be the style of command to run against the production database whenever a change is made.
 
-Run `python ./src/scripts/dictionary.py import --help` for more information about the import command's usage.
+Run `python -m src.scripts.dictionary import --help` for more information about the import command's usage.
 
 ### Understanding Local Dictionary Fixturization
 This application automatically applies all database schemas and seeds it with fixture data when starting fresh with Docker.
@@ -89,9 +89,9 @@ Combining the concepts from the above, a dictionary update workflow would look a
 1. Make the desired changes in [`dictionary.txt`](./src/data/dictionary.txt)
 1. Apply them to the local database and fixture files by running `make dict-local-import`
 1. Test the application to ensure you are pleased with the results
-1. Apply them to the production database by running ```python ./src/scripts/dictionary.py import --dsn="PROD_DB_URI_HERE" ./src/data/dictionary.txt```
+1. Apply them to the production database by running ```python -m src.scripts.dictionary import --dsn="PROD_DB_URI_HERE" ./src/data/dictionary.txt```
 (making sure to paste in the production DB credentials)
-1. Commit the changed [`dictionary.txt` file](./src/data/dictionary.txt) and the [dictionary fixture file](./container/db/primary/01-dictionary.sql) file to Git
+1. Commit the changed [`dictionary.txt` file](./src/data/dictionary.txt) and the [dictionary fixture file](./container/db/primary/01-dictionary.sql) to Git
 
 ## Summary of Commands
 From the project root:
