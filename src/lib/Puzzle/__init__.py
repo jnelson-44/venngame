@@ -42,3 +42,11 @@ class Puzzle:
                 raise ValueError(f"Solution incomplete: Region {region_id} overloaded.")
             regions_found.add(region_id)
         return len(regions_found) == expected_region_count
+
+    def get_criteria_by_mask(self, mask:int) -> list[Criterion]:
+        results:list[Criterion] = []
+        for i in range(0, len(self.criteria)):
+            crit_bit = 1 << i
+            if mask & crit_bit:
+                results.append(self.criteria[i])
+        return results

@@ -72,3 +72,15 @@ class TestPuzzle(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ValueError):
             # "rabbit" and "sabbath" overlap regions in an otherwise complete set
             await self.puzzle.solve_with(["tester", "something", "rabbit", "sabbath", "rebuttal", "butter", "abattoir"])
+
+    def test_get_criteria_by_mask(self):
+        self.assertEqual([], self.puzzle.get_criteria_by_mask(0))
+
+        b = [self.puzzle.criteria[1]]
+        self.assertEqual(b, self.puzzle.get_criteria_by_mask(2))
+
+        ac = [self.puzzle.criteria[0], self.puzzle.criteria[2]]
+        self.assertEqual(ac, self.puzzle.get_criteria_by_mask(5))
+
+        abc = [self.puzzle.criteria[0], self.puzzle.criteria[1], self.puzzle.criteria[2]]
+        self.assertEqual(abc, self.puzzle.get_criteria_by_mask(7))
