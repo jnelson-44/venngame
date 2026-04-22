@@ -1,32 +1,19 @@
 import asyncio
-import os
 import typer
 from pathlib import Path
 from psycopg_pool import AsyncConnectionPool
 from rich import print
-from src.lib import Database
+from src.lib import Database, Dictionary
 from typing import Annotated
+from .common import get_dsn
 
 app = typer.Typer(no_args_is_help=True)
+
+BATCH_SIZE:int = 500
 
 ###########################################
 ## DATABASE HELPERS                      ##
 ###########################################
-def get_dsn(dsn:str=None) -> str:
-    """
-    Returns the DSN passed in, if it exists, or returns the DATABASE_URL environment variable
-    """
-    if dsn:
-        return dsn
-    dsn = os.getenv("VENNGAME_DATABASE_URL") \
-        if os.getenv("VENNGAME_DATABASE_URL") is not None \
-        else os.getenv("DATABASE_URL")
-    if not dsn:
-        print("Must provide --dsn option or DATABASE_URL (or VENNGAME_DATABASE_URL) environment variable")
-        exit(1)
-    return dsn
-
-
 async def db_table_dictionary_clear(pool:AsyncConnectionPool) -> None:
     """
     Drops the dictionary table, if it exists
@@ -40,13 +27,12 @@ TRUNCATE TABLE dictionary RESTART IDENTITY
 ###########################################
 ## SCRIPT COMMAND: IMPORT                ##
 ###########################################
-BATCH_SIZE:int = 150
 
 @app.command("import")
 def db_import(
         filename:  Annotated[str, typer.Argument(help="The absolute or relative path to the dictionary.txt file")],
         dsn:       Annotated[str, typer.Option(help="The DSN string of the database (e.g., type://user:pass@host:port/dbname). If not provided, the DATABASE_URL environment variable must be set")] = None,
-        batchsize: Annotated[int, typer.Option(help=f"Size of batches to use (defaults to {BATCH_SIZE})")] = BATCH_SIZE,
+        batchsize: Annotated[int, typer.Option(help=f"Size of batches to use")] = BATCH_SIZE,
         debug:     Annotated[bool, typer.Option(help="Print debug output")] = False
     ):
     """
@@ -120,6 +106,25 @@ def file_normalize(
                 continue
             word = word.lower()
             print(word)
+
+
+###########################################
+## SCRIPT COMMAND: COUNT                 ##
+###########################################
+@app.command()
+def count(
+        dsn: Annotated[str, typer.Option(help="The DSN string of the database (e.g., type://user:pass@host:port/dbname). If not provided, the DATABASE_URL environment variable must be set")] = None,
+    ):
+    """
+    Returns the number of words in the current dictionary database
+    """
+    asyncio.run(_count(get_dsn(dsn)))
+
+async def _count(dsn:str):
+    Database.init(dsn)
+    async with Database.get_pool():
+        print(await Dictionary.get_word_count())
+
 
 
 ###########################################
