@@ -49,31 +49,118 @@ For more verbose output, use `make test-unit-v`.
 
 See the [`Makefile`](./Makefile) for more details.
 
-## Script Helpers
-This project contains multiple scripts that can be executed to assist in managing and evaluating the application.
+## Database Management
+The table definitions for the database are stored in [`./container/db/primary/00-schema.sql`](./container/db/primary/00-schema.sql).
+When a schema change is necessary, update that file with the latest definition(s) to ensure that the changes are picked up in the local
+development environment.  Adding, changing, or deleting tables in the Production database will have to be done manually using `CREATE`,
+`ALTER`, or `DROP` statements as needed in accordance with whatever strategy is appropriate for the live load.
+
+*This application does not automatically apply schema changes to the Production database (nor should it).*
+
+## CLI Tools
+This project contains multiple CLI scripts that can be executed to assist in managing and evaluating the application.
 These scripts are stored in the [`./src/scripts/`](./src/scripts) directory.
 
+### Database Access
 Several of these scripts require a database connection to perform their work. There are multiple ways to provide these to the scripts - the only
-requirement is that the DSN string used conforms to the `RFC-3986` standard for database URIs, e.g., `dbtype://user:pass@host:port/dbname`.
+requirement is that the DSN strings used conform to the `RFC-3986` standard for database URIs, e.g. strings of the form `{dbtype}://{dbuser}:{dbpass}@{dbhost}:{dbport}/{dbname}`.
 
 Use the `--help` switch for each script's subcommands to see if they require a DSN.  If they do, it may be provided using the
 `--dsn` option, e.g., `--dsn="dbtype://user:pass@host:port/dbname"`.
-As this can get quite cumbersome to provide repeatedly, it is also possible to set the Environment Variable `DATABASE_URL` and the script
+As this can get quite cumbersome to provide repeatedly, it is also possible to set the environment variable `DATABASE_URL` and the script
 will read from that instead.  To avoid collisions with any other applications, the `VENNGAME_DATABASE_URL` could also be used if desired.
 
-For example, the following sets of commands produce the same output by connecting to the same database:
+For example, the following sets of commands each use the same script and connect to the same database, but use two different styles of specifying the DSN:
 ```shell
 # Using --dsn flag
 python -m src.scripts.puzzle get-region-hits --dsn="postgres://root:passwordCity@localhost:5432/primary" 2026-03-27
 
-# Using Environment Variable
+# Using environment variable
+## Set it...
 export VENNGAME_DATABASE_URL="postgres://root:passwordCity@localhost:5432/primary"
+## Execute a command...
 python -m src.scripts.puzzle get-region-hits 2026-03-27
+## Execute another
+python -m src.scripts.puzzle get-region-hits 2026-03-23
 ```
-The latter is clearly much simpler, and the Environment Variable will remain set as long as the terminal session remains open.
-It can also be rewritten to the production database, another testing database, etc.  When using this approach, make sure to
+The latter is clearly much simpler, and the environment variable will remain set as long as the terminal session is active.
+The environment variable can also be rewritten to the production database, another testing database, etc.  When using this approach, make sure to
 `print $VENNGAME_DATABASE_URL` and/or `print $DATABASE_URL` to make sure you know which database is being used for the script's
 execution.
+
+### Puzzle Information CLI Tools
+The [`./src/scripts/puzzle.py`](./src/scripts/puzzle.py) script can be used to get basic information about a configured puzzle in the system.
+Run `python -m src.scripts.puzzle --help` for more information.
+
+A DSN is assumed to be set in an environment variable as described above, otherise the `--dsn` switch must be provided for some subcommands.
+
+#### Get Basic Puzzle Info
+Use the command `python -m src.scripts.puzzle info {PUZZLE_ID}` to get basic information about a puzzle, if configured.
+
+Example:
+```shell
+python -m src.scripts.puzzle info 2026-03-27
+
+Puzzle Name: 2026-03-27
+
+Region A: Ends with R
+Region B: At least 8 letters
+Region C: Has double letters
+```
+See `python -m src.scripts.puzzle info --help` for more information.
+
+#### Get Region Hit Count
+It may be helpful to see how many matches there are across a live (database) dictionary for a given puzzle.
+Use the command `python -m src.scripts.puzzle get-region-hits {PUZZLE_ID}` to get this information for a configured puzzle.
+
+Example:
+```shell
+python -m src.scripts.puzzle get-region-hits 2026-03-27
+Compiling Region Hit information for Puzzle 2026-03-27...
+
+Puzzle Name: 2026-03-27
+
+Region A: Ends with R
+Region B: At least 8 letters
+Region C: Has double letters
+
+Mask   Region:   Hits
+(1)         A:   3399
+(2)         B:  88453
+(4)         C:   8703
+(3)     A & B:   4176
+(6)     B & C:  30736
+(5)     C & A:   1042
+(7) A & B & C:   1425
+(0)      None:  40757
+```
+See `python -m src.scripts.puzzle get-region-hits --help` for more information.
+
+#### Export Words for Region
+There may be occasions to view the words in the dictionary that match a specific region.
+For example, if a Region Hit Count shows that a region has unexpectedly high or unexpectedly low
+numbers, it could be worth manually inspecting what words are being picked up by the Criteria.
+
+By default, matching words will be printed to STDOUT but, because these datasets may be quite large, it is
+often desirable to output them directly to a plaintext file. This can be done with the `--outfile` flag.
+
+Example:
+```shell
+# Finds all words that match the intersection of regions A and C,
+#  saving the results to the file "regions-ac.txt"
+python -m src.scripts.puzzle export-region-words --outfile="regions-ac.txt" 2026-03-27 CA
+
+Aggregating words for region(s) 'AC' with Criteria:
+   - Ends with R
+   - Has double letters
+
+1042 results written to regions-ac.txt
+```
+
+See `python -m src.scripts.puzzle export-region-words --help` for more information.
+
+### Dictionary CLI Tools
+See the following section, Dictionary Management, for detailed information about the dictionary-related CLI tools.
 
 ## Dictionary Management
 The raw dictionary is stored in [`./src/data/dictionary.txt`](./src/data/dictionary.txt), but this project supports the
@@ -82,7 +169,7 @@ can be run to do this against any database by passing in the desired DSN as desc
 
 Run `python -m src.scripts.dictionary --help` for more information about the script's usage.
 
-The following sections assume an Environment Variable has been set and exported into the session, such as:
+The following sections assume an environment variable has been set and exported into the session, such as:
 ```shell
 export DATABASE_URL="postgres://root:passwordCity@localhost:5432/primary" 
 ```
@@ -126,7 +213,10 @@ Combining the concepts from the above, a dictionary update workflow would look a
 (making sure to paste in the production DB credentials)
 1. Commit the changed [`dictionary.txt` file](./src/data/dictionary.txt) and the [dictionary fixture file](./container/db/primary/01-dictionary.sql) to Git
 
-## Summary of Local Development Commands
+---
+
+## Command Summaries
+### Common Local Development Commands
 From the project root:
 ```shell
 # Build the project
@@ -145,49 +235,3 @@ make test-unit
 make dict-local-import
 ```
 
-## Puzzle Information Scripts
-The [`./src/scripts/puzzle.py`](./src/scripts/puzzle.py) script can be used to get basic information about a configured puzzle in the system.
-Run `python -m src.scripts.puzzle --help` for more information.
-
-Again, a DSN is assumed to be set in an Environment Variable as described above, otherise the `--dsn` switch must be provided for some subcommands.
-
-### Get Basic Puzzle Info
-Use the command `python -m src.scripts.puzzle info {PUZZLE_ID}` to get basic information about a puzzle, if configured.
-
-Example:
-```shell
-python -m src.scripts.puzzle info 2026-03-27
-
-Puzzle Name: 2026-03-27
-
-Region A: Ends with R
-Region B: At least 8 letters
-Region C: Has double letters
-```
-See `python -m src.scripts.puzzle info --help` for more information.
-
-### Get Region Hit Count
-It may be helpful to see how many matches there are across a live (database) dictionary for a given puzzle.
-Use the command `python -m src.scripts.puzzle get-region-hits {PUZZLE_ID}` to get this information for a configured puzzle.
-
-Example:
-```shell
-python -m src.scripts.puzzle get-region-hits 2026-03-27
-Compiling Region Hit information for Puzzle 2026-03-27...
-
-Puzzle Name: 2026-03-27
-
-Region A: Ends with R
-Region B: At least 8 letters
-Region C: Has double letters
-
-         A:   3399
-         B:  88453
-         C:   8703
-     A & B:   4176
-     B & C:  30736
-     C & A:   1042
- A & B & C:   1425
-      None:  40757
-```
-See `python -m src.scripts.puzzle get-region-hits --help` for more information.
