@@ -34,3 +34,45 @@ class HasDoubleLetters(Criterion):
                 return True
             prev_letter = solution[i]
         return False
+
+
+class Multiplicity(Criterion):
+    def __init__(self, n:int, char:str):
+        self.n = n
+        self.char = str.lower(char)
+        super().__init__(f"Has exactly {n} {str.upper(char)}s")
+
+    def is_satisfied_by(self, solution:str) -> bool:
+        count = 0
+        for char in str.lower(solution):
+            if char == self.char:
+                count = count + 1
+        return count == self.n
+
+
+class AtLeast(Criterion):
+    def __init__(self, n:int, char:str):
+        self.n = n
+        self.char = str.lower(char)
+        super().__init__(f"Has at least {n} {str.upper(char)}s")
+
+    def is_satisfied_by(self, solution:str) -> bool:
+        count = 0
+        for char in str.lower(solution):
+            if char == self.char:
+                count = count + 1
+        return count >= self.n
+
+
+class AtMost(Criterion):
+    def __init__(self, n:int, char:str):
+        self.n = n
+        self.char = str.lower(char)
+        super().__init__(f"Has at most {n} {str.upper(char)}s")
+
+    def is_satisfied_by(self, solution:str) -> bool:
+        count = 0
+        for char in str.lower(solution):
+            if char == self.char:
+                count = count + 1
+        return count <= self.n
