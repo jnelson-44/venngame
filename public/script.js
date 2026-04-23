@@ -737,8 +737,13 @@ if (!mask) {
   }
 
   async function loadPuzzleData() {
+    let puzzleToLoad = "current";
+    const queryParams = new URLSearchParams(window.location.search);
+    if (queryParams.has("forcePuzzle")) {
+      puzzleToLoad = queryParams.get("forcePuzzle");
+    }
     try {
-      const response = await fetch('/api/puzzles/current');
+      const response = await fetch(`/api/puzzles/${puzzleToLoad}`);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
