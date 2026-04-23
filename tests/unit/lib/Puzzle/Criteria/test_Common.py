@@ -2,23 +2,36 @@ import unittest
 from src.lib.Puzzle.Criteria.Common import *
 
 class TestCommonCriteria(unittest.TestCase):
-    def test_ends_with_letter(self):
+    def test_ends_with(self):
         """The entry ends with a specific letter"""
-        crit = EndsWithLetter("t")
+        crit = EndsWith("t")
 
         self.assertTrue(crit.is_satisfied_by("test"))
         self.assertTrue(crit.is_satisfied_by("rest"))
         self.assertTrue(crit.is_satisfied_by("testt"))
         self.assertFalse(crit.is_satisfied_by("testtr"))
 
-    def test_starts_with_letter(self):
+        crit = EndsWith("er")
+
+        self.assertTrue(crit.is_satisfied_by("tester"))
+        self.assertTrue(crit.is_satisfied_by("er"))
+        self.assertFalse(crit.is_satisfied_by("ertest"))
+        self.assertFalse(crit.is_satisfied_by("testre"))
+
+    def test_starts_with(self):
         """The entry begins with a specific letter"""
-        crit = StartsWithLetter("t")
+        crit = StartsWith("t")
 
         self.assertTrue(crit.is_satisfied_by("test"))
         self.assertTrue(crit.is_satisfied_by("ttest"))
         self.assertTrue(crit.is_satisfied_by("testr"))
         self.assertFalse(crit.is_satisfied_by("rtestt"))
+
+        crit = StartsWith("str")
+
+        self.assertTrue(crit.is_satisfied_by("stress"))
+        self.assertTrue(crit.is_satisfied_by("str"))
+        self.assertFalse(crit.is_satisfied_by("tstress"))
 
     def test_has_double_letters(self):
         """The entry contains a sequence two or more letters"""

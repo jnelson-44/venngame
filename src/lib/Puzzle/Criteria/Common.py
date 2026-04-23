@@ -1,24 +1,24 @@
 
 from src.lib.Puzzle.Criteria import Criterion
 
-class EndsWithLetter(Criterion):
-    def __init__(self, letter:str):
-        super().__init__(f"Ends with {str.upper(letter)}")
-        self.letter = letter
+class EndsWith(Criterion):
+    def __init__(self, letters:str):
+        super().__init__(f"Ends with {str.upper(letters)}")
+        self.letters = letters
 
     def is_satisfied_by(self, solution:str) -> bool:
-        if str.lower(solution[-1]) == str.lower(self.letter):
+        if str.lower(solution[len(solution)-len(self.letters):]) == str.lower(self.letters):
             return True
         return False
 
 
-class StartsWithLetter(Criterion):
-    def __init__(self, letter:str):
-        super().__init__(f"Begins with {str.upper(letter)}")
-        self.letter = letter
+class StartsWith(Criterion):
+    def __init__(self, letters:str):
+        super().__init__(f"Begins with {str.upper(letters)}")
+        self.letters = letters
 
     def is_satisfied_by(self, solution:str) -> bool:
-        if str.lower(solution[0]) == str.lower(self.letter):
+        if str.lower(solution[:len(self.letters)]) == str.lower(self.letters):
             return True
         return False
 

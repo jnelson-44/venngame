@@ -4,18 +4,18 @@ from src.lib.Puzzle.Criteria import Not
 
 puzzle_config = {
     "2026-04-22": [
-        Common.StartsWithLetter("r"),
+        Common.StartsWith("r"),
         Not(Length.ExactLength(6)).Labeled("Isn't 6 letters"),
-        Common.HasDoubleLetters().And(Common.EndsWithLetter("s"))
+        Common.HasDoubleLetters().And(Common.EndsWith("s"))
     ],
     "2026-03-27": [
-        Common.EndsWithLetter("r"),
+        Common.EndsWith("r"),
         Length.AtLeastLength(8),
         Common.HasDoubleLetters()
     ],
     "2026-03-23": [
-        Common.StartsWithLetter("b"),
-        Common.EndsWithLetter("t"),
+        Common.StartsWith("b"),
+        Common.EndsWith("t"),
         Length.ExactLength(7)
     ],
 }

@@ -8,7 +8,7 @@ class TestPuzzle(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         # Set up generic Puzzle
         self.criteria = [
-            Common.EndsWithLetter("r"),
+            Common.EndsWith("r"),
             Length.AtLeastLength(8),
             Common.HasDoubleLetters()
         ]
