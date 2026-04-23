@@ -18,4 +18,14 @@ puzzle_config = {
         Common.EndsWith("t"),
         Length.ExactLength(7)
     ],
+    "2026-03-22": [
+        Common.AtLeast(3, "s"),
+        Common.EndsWith("ing"),
+        Length.ExactLength(5).Or(Length.ExactLength(7)).Labeled("Is exactly 5 or 7 letters")
+    ],
+    "2026-03-21": [
+        Common.Multiplicity(2, "r"),
+        Common.StartsWith("sh").Or(Common.StartsWith("st")),
+        Length.AtMostLength(6)
+    ],
 }
