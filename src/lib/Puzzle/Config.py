@@ -3,6 +3,11 @@ import src.lib.Puzzle.Criteria.Length as Length
 from src.lib.Puzzle.Criteria import Not
 
 puzzle_config = {
+    "2026-04-24": [
+        Common.EndsWithLetter("r"),
+        Length.AtLeastLength(8),
+        Common.HasDoubleLetters()
+    ],
     "2026-04-22": [
         Common.StartsWithLetter("r"),
         Not(Length.ExactLength(6)).Labeled("Isn't 6 letters"),
