@@ -619,11 +619,14 @@ if (!mask) {
 }
 
     if (notes[mask]) {
-      statusMessage.textContent = "That section is already filled.";
-      statusMessage.style.color = "#c62828";
-      animateInputError();
-      return;
-    }
+  statusMessage.textContent = "That section is already filled.";
+  statusMessage.style.color = "#c62828";
+  animateInputError();
+
+  flashRegion(mask); // 👈 ADD THIS LINE
+
+  return;
+}
 
     notes[mask] = word;
     wordInput.value = "";

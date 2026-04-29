@@ -4,7 +4,7 @@ from src.lib.Puzzle.Criteria import Not
 
 puzzle_config = {
     "2026-04-24": [
-        Common.EndsWithLetter("r"),
+        Common.EndsWith("r"),
         Length.AtLeastLength(8),
         Common.HasDoubleLetters()
     ],
