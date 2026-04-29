@@ -88,6 +88,18 @@ The environment variable can also be rewritten to the production database, anoth
 `print $VENNGAME_DATABASE_URL` and/or `print $DATABASE_URL` to make sure you know which database is being used for the script's
 execution.
 
+To quickly set up your terminal session with the correct variable for the running scripts against the local, Dockerized database, run:
+```shell
+eval $(make print-db-config)
+```
+Check that the variable has been correctly set:
+```shell
+printenv | grep -i database_url
+```
+The `VENNGAME_DATABASE_URL` variable should be displayed in the environment.
+Now you may begin running script commands without needing to specify the `--dsn` inline.
+This procedure will need to be performed each time a new terminal session begins.
+
 ### Puzzle Information CLI Tools
 The [`./src/scripts/puzzle.py`](./src/scripts/puzzle.py) script can be used to get basic information about a configured puzzle in the system.
 Run `python -m src.scripts.puzzle --help` for more information.
