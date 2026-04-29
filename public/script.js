@@ -68,8 +68,9 @@
 
   let tutorialStep = 0;
   let flashingMask = 0;
-  let flashStartTime = 0;
-  const flashDuration = 400;
+let flashStartTime = 0;
+let flashColor = "green";
+const flashDuration = 1000;
 
   let lastMask = 0;
   let clickedMask = 0;
@@ -318,10 +319,10 @@ for (const paragraph of paragraphs) {
     const maxWidths = {
       1: 150,
       2: 150,
-      3: 120,
+      3: 85,
       4: 170,
-      5: 120,
-      6: 120,
+      5: 85,
+      6: 85,
       7: 105
     };
 
@@ -347,24 +348,20 @@ for (const paragraph of paragraphs) {
   }
 
   function getFlashAlpha() {
-    if (!flashingMask || !flashStartTime) return null;
+  if (!flashingMask || !flashStartTime) return null;
 
-    const elapsed = Date.now() - flashStartTime;
+  const elapsed = Date.now() - flashStartTime;
 
-    if (elapsed >= flashDuration) {
-      flashingMask = 0;
-      flashStartTime = 0;
-      return null;
-    }
-
-    if (elapsed <= 200) {
-      const t = elapsed / 200;
-      return 0.28 + (0.60 - 0.28) * t;
-    }
-
-    const t = (elapsed - 200) / 200;
-    return 0.60 + (0.28 - 0.60) * t;
+  if (elapsed >= flashDuration) {
+    flashingMask = 0;
+    flashStartTime = 0;
+    return null;
   }
+
+  const t = elapsed / flashDuration;
+  return 0.45 * (1 - t) + 0.12;
+}
+
 
   function drawBase() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -425,16 +422,21 @@ drawWrappedLabel(labelC, C.x, C.y - C.r - 28, {
 
 for (let mask = 1; mask <= 7; mask++) {
   if (notes[mask]) {
-    if (mask === flashingMask && flashAlpha !== null) {
-      drawRegion(mask, `rgba(0,0,0,${flashAlpha})`);
-    } else {
-      drawRegion(mask, 'rgba(0,0,0,0.28)');
-    }
+    drawRegion(mask, 'rgba(0,0,0,0.28)');
   } else if (isMobile && mask === clickedMask) {
     drawRegion(mask, 'rgba(0,0,0,0.16)');
   } else if (!isMobile && mask === hoveredMask) {
     drawRegion(mask, 'rgba(0,0,0,0.16)');
   }
+}
+
+if (flashingMask && flashAlpha !== null) {
+  const color =
+    flashColor === "red"
+      ? `rgba(220,0,0,${flashAlpha})`
+      : `rgba(0,150,60,${flashAlpha})`;
+
+  drawRegion(flashingMask, color);
 }
 
     for (const [key, word] of Object.entries(notes)) {
@@ -523,22 +525,27 @@ for (let mask = 1; mask <= 7; mask++) {
     return regionId;
   }
 
-  function flashRegion(mask) {
-    flashingMask = mask;
-    flashStartTime = Date.now();
+  function flashRegion(mask, color = "green") {
+  flashingMask = mask;
+  flashStartTime = Date.now();
+  flashColor = color;
 
-    function animateFlash() {
-      drawBase();
+  function animateFlash() {
+    drawBase();
 
-      if (flashingMask) {
-        requestAnimationFrame(animateFlash);
-      } else if (allRegionsFilled()) {
+    if (flashingMask) {
+      requestAnimationFrame(animateFlash);
+    } else {
+      drawBase(); // final clean redraw
+
+      if (allRegionsFilled()) {
         completePuzzle();
       }
     }
-
-    requestAnimationFrame(animateFlash);
   }
+
+  requestAnimationFrame(animateFlash);
+}
 
   async function completePuzzle() {
     if (puzzleCompleted) return;
@@ -622,9 +629,7 @@ if (!mask) {
   statusMessage.textContent = "That section is already filled.";
   statusMessage.style.color = "#c62828";
   animateInputError();
-
-  flashRegion(mask); // 👈 ADD THIS LINE
-
+  flashRegion(mask, "red");
   return;
 }
 
