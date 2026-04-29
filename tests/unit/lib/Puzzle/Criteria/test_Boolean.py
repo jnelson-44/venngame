@@ -55,6 +55,12 @@ class TestBooleanCriteria(unittest.TestCase):
         crit = AlwaysPasses().Or(AlwaysFails())
         self.assertTrue(crit.is_satisfied_by("test"))
 
+        crit = AlwaysFails().Or(AlwaysFails()).Or(AlwaysPasses())
+        self.assertTrue(crit.is_satisfied_by("test"))
+
+        crit = AlwaysFails().Or(AlwaysFails().Or(AlwaysPasses()))
+        self.assertTrue(crit.is_satisfied_by("test"))
+
         crit = AlwaysFails().Or(AlwaysFails())
         self.assertFalse(crit.is_satisfied_by("test"))
 
