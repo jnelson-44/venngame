@@ -3,6 +3,11 @@ import src.lib.Puzzle.Criteria.Length as Length
 from src.lib.Puzzle.Criteria import Not
 
 puzzle_config = {
+    "2026-05-01": [
+        Common.EndsWith("r"),
+        Length.AtMostLength(8),
+        Common.ScrabbleScoreAtLeast(14)
+    ],
     "2026-04-24": [
         Common.EndsWith("r"),
         Length.AtLeastLength(8),

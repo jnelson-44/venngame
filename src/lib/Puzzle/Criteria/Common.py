@@ -76,3 +76,25 @@ class AtMost(Criterion):
             if char == self.char:
                 count = count + 1
         return count <= self.n
+
+class ScrabbleScoreAtLeast(Criterion):
+    LETTER_VALUES = {
+        "a": 1, "e": 1, "i": 1, "o": 1, "u": 1, "l": 1, "n": 1, "s": 1, "t": 1, "r": 1,
+        "d": 2, "g": 2,
+        "b": 3, "c": 3, "m": 3, "p": 3,
+        "f": 4, "h": 4, "v": 4, "w": 4, "y": 4,
+        "k": 5,
+        "j": 8, "x": 8,
+        "q": 10, "z": 10,
+    }
+
+    def __init__(self, score: int):
+        self.score = score
+        super().__init__(f"Scrabble score is at least {score}")
+
+    def is_satisfied_by(self, solution: str) -> bool:
+        total = 0
+        for char in str.lower(solution):
+            total += self.LETTER_VALUES.get(char, 0)
+
+        return total >= self.score
