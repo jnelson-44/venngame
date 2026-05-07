@@ -1,11 +1,32 @@
+from datetime import date
 from src.lib import Dictionary
 from src.lib.Puzzle.Criteria import Criterion
 from src.lib.Puzzle.Config import puzzle_config
 
 def get_current() -> Puzzle:
-    # Grabbing the first one in the list for now
-    puzz_id, crit = next(iter(puzzle_config.items()))
-    return Puzzle(puzz_id,crit)
+    # Grab the Puzzle with the current date if it exists
+    today_id = date.today().isoformat()
+    today_puzzle = get_by_id(today_id)
+    if today_puzzle:
+        return today_puzzle
+
+    # Otherwise, iterate through all of them until we hit a date that has not yet passed
+    # Start by sorting the list for good measure (standard YYYY-MM-DD strings sort naturally)...
+    sorted_puzzle_config = dict(sorted(puzzle_config.items(), reverse=False))
+    # Initialize a fallback by grabbing the earliest date we have...
+    (prev_id, prev_crit) = next(iter(sorted_puzzle_config.items()))
+    # Now calculate validity as we iterate:
+    #  Test to see if today is less than the next entry in the sorted config list
+    for next_id, next_crit in sorted_puzzle_config.items():
+        # - If it is, don't serve it, as it is for the future. Break in order to return the most-recent as of this point
+        if today_id < next_id:
+            break
+        # - Otherwise, it is valid to serve, so track it as a potential fallback for a future iteration
+        prev_id = next_id
+        prev_crit = next_crit
+
+    # Finally, return the last found valid config - that is the "current" puzzle
+    return Puzzle(prev_id, prev_crit)
 
 def get_by_id(puzz_id:str) -> Puzzle | None:
     if puzz_id in puzzle_config:
