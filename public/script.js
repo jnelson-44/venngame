@@ -107,6 +107,12 @@ const flashDuration = 1000;
       highlight: 7
     },
     {
+  title: "Use the Most Specific Region",
+  text: "Words must go in the region matching every rule they satisfy. “Persevere” contains V and has at least 8 letters, so it belongs in the overlap — not the single-rule section.",
+  highlight: 3,
+  exampleWord: "persevere"
+},
+    {
       title: "Enter Words",
       text: "Type a word into the text box and press enter. If it is valid, it will automatically be placed in the correct region.",
       highlight: null
@@ -386,7 +392,7 @@ const activeMask = isMobile ? clickedMask : (hoveredMask || clickedMask);
 
 drawWrappedLabel(
   window.innerWidth < 760 ? splitSideRule(labelA, 16) : labelA,
-  window.innerWidth < 760 ? 95 : A.x - A.r - 24,
+  window.innerWidth < 760 ? 95 : A.x - A.r - 20,
   A.y,
   {
     maxWidth: window.innerWidth < 760 ? 170 : 200,
@@ -800,6 +806,10 @@ if (!mask) {
     if (step.highlight) {
       drawRegion(step.highlight, 'rgba(0,0,0,0.25)');
     }
+
+    if (step.exampleWord && step.highlight) {
+  drawRegionWord(step.highlight, step.exampleWord);
+}
   }
 
   canvas.addEventListener('click', (e) => {
