@@ -1,6 +1,9 @@
 name: Build and Test PR
 run-name: Create/Update PR by ${{ github.actor }}
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main # Only triggers when the target of the PR is the primary branch
