@@ -654,7 +654,7 @@ timerEl.classList.remove("completePulse");
 void timerEl.offsetWidth;
 timerEl.classList.add("completePulse");
 
-completeTime.textContent = `Your time: ${finalShareTime}`;
+completeTime.textContent = finalShareTime;
 completionGlowStartTime = Date.now();
 
 function animateCompletionGlow() {
@@ -1126,47 +1126,82 @@ drawBase();
 });
 
   shareResults.addEventListener('click', async () => {
-    const shareText = `I finished today’s Intersection puzzle in ${finalShareTime}. Can you beat my time?
+  const shareText = `I finished today’s Intersection puzzle in ${finalShareTime}. Can you beat my time?
 
 https://venngame-ncza.onrender.com/`;
 
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(shareText);
-      } else {
-        const temp = document.createElement("textarea");
-        temp.value = shareText;
-        temp.style.position = "fixed";
-        temp.style.opacity = "0";
-        temp.style.pointerEvents = "none";
-        document.body.appendChild(temp);
-        temp.focus();
-        temp.select();
+  try {
 
-        const successful = document.execCommand("copy");
-        document.body.removeChild(temp);
+    if (navigator.share) {
+      await navigator.share({
+        title: "Intersection",
+        text: shareText,
+        url: "https://venngame-ncza.onrender.com/"
+      });
 
-        if (!successful) {
-          throw new Error("Fallback copy failed");
-        }
-      }
-
-
-      completeTime.innerHTML = "<strong>Copied</strong><br>Thanks for playing!";
+      completeTime.classList.add("copiedMessage");
+      completeTime.innerHTML =
+        "<strong>Shared</strong><br>Thanks for playing!";
 
       if (shareSavedResult && puzzleCompleted) {
+        shareSavedResult.style.display = "block";
+      }
+
+      return;
+    }
+
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(shareText);
+    } else {
+      const temp = document.createElement("textarea");
+
+      temp.value = shareText;
+      temp.style.position = "fixed";
+      temp.style.opacity = "0";
+      temp.style.pointerEvents = "none";
+
+      document.body.appendChild(temp);
+
+      temp.focus();
+      temp.select();
+
+      const successful = document.execCommand("copy");
+
+      document.body.removeChild(temp);
+
+      if (!successful) {
+        throw new Error("Fallback copy failed");
+      }
+    }
+
+    completeTime.classList.add("copiedMessage");
+
+    completeTime.innerHTML =
+      "<strong>Copied</strong><br>Thanks for playing!";
+
+    if (shareSavedResult && puzzleCompleted) {
       shareSavedResult.style.display = "block";
     }
-    } catch (err) {
-      console.error("Clipboard copy failed:", err);
-      completeTime.innerHTML =
-        "<strong>Copy failed</strong><br>Your browser blocked clipboard access on this page.";
-    }
-  });
+
+  } catch (err) {
+
+  if (err.name === "AbortError") {
+    return;
+  }
+
+  console.error("Share/copy failed:", err);
+
+  completeTime.classList.add("copiedMessage");
+
+  completeTime.innerHTML =
+    "<strong>Share failed</strong><br>Please try again.";
+}
+});
 
   if (shareSavedResult) {
   shareSavedResult.addEventListener('click', () => {
-    completeTime.textContent = `Your time: ${finalShareTime}`;
+    completeTime.classList.remove("copiedMessage");
+    completeTime.textContent = finalShareTime;
     completeOverlay.style.display = "flex";
   });
 }

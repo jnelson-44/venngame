@@ -440,6 +440,89 @@ button:hover{
 
 /* COMPLETE OVERLAY */
 
+#completeBox{
+  width:min(340px, calc(100% - 32px));
+  padding:26px 24px 22px;
+  border-radius:28px;
+}
+
+#completeBadge{
+  width:56px;
+  height:56px;
+  margin:0 auto 14px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  border-radius:50%;
+  background:linear-gradient(180deg, var(--accent-soft), #ffffff);
+  border:1px solid var(--line);
+  color:var(--accent-deep);
+
+  font-size:30px;
+  font-weight:900;
+  box-shadow:0 8px 20px rgba(63,143,209,0.12);
+}
+
+#completeBox h2{
+  margin:0;
+  font-size:26px;
+  line-height:1.1;
+  color:var(--ink);
+}
+
+#completeSubtitle{
+  margin:8px 0 18px;
+  color:var(--muted);
+  font-size:15px;
+}
+
+#completeTime{
+  margin:0 0 22px;
+  font-size:36px;
+  line-height:1;
+  font-weight:900;
+  letter-spacing:-2px;
+  color:var(--accent-deep);
+}
+
+#completeTime.copiedMessage{
+  font-size:20px;
+  line-height:1.4;
+  letter-spacing:0;
+  font-weight:700;
+  color:var(--muted);
+}
+
+#shareResults{
+  background:linear-gradient(
+    180deg,
+    var(--accent) 0%,
+    var(--accent-deep) 100%
+  );
+
+  color:white;
+  border:none;
+
+  box-shadow:0 10px 24px rgba(63,143,209,0.22);
+}
+
+#shareResults:hover{
+  transform:translateY(-1px);
+  box-shadow:0 14px 28px rgba(63,143,209,0.28);
+}
+
+#shareResults,
+#completeClose{
+  width:100%;
+  margin:0;
+}
+
+#completeClose{
+  margin-top:10px;
+}
+
 #completeOverlay.show{
   animation: completeFadeIn 220ms ease-out both;
 }
@@ -750,21 +833,6 @@ button:hover{
     font-size:12px;
   }
 
-}
-
-#shareResults{
-  background:#ffffff;
-  border:1px solid var(--line);
-  color:var(--ink);
-  padding:12px 18px;
-  border-radius:999px;
-  font:inherit;
-  cursor:pointer;
-}
-
-#shareResults:hover{
-  border-color:var(--line-strong);
-  background:var(--bg-soft);
 }
 
 #entryStatus{
