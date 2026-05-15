@@ -50,8 +50,10 @@
   const entryBar = document.getElementById('entryBar');
   const entryStatus = document.getElementById('entryStatus');
   const hint = document.querySelector('.hint');
+  const helpBtn = document.getElementById('helpBtn');
 
   const shareSavedResult = document.getElementById('shareSavedResult');
+
 
   let gameStarted = false;
   let tutorialMode = false;
@@ -429,7 +431,7 @@ drawWrappedLabel(labelC, C.x, C.y - C.r - 28, {
     const isMobile = window.innerWidth < 760;
 
 for (let mask = 1; mask <= 7; mask++) {
-  if (notes[mask]) {
+  if (!tutorialMode && notes[mask]) {
     drawRegion(mask, 'rgba(0,0,0,0.28)');
   } else if (isMobile && mask === clickedMask) {
     drawRegion(mask, 'rgba(0,0,0,0.16)');
@@ -447,9 +449,11 @@ if (flashingMask && flashAlpha !== null) {
   drawRegion(flashingMask, color);
 }
 
-    for (const [key, word] of Object.entries(notes)) {
-      drawRegionWord(Number(key), word);
-    }
+    if (!tutorialMode) {
+  for (const [key, word] of Object.entries(notes)) {
+    drawRegionWord(Number(key), word);
+  }
+}
   }
 
   function formatTime(ms) {
@@ -532,6 +536,29 @@ if (flashingMask && flashAlpha !== null) {
 
     return regionId;
   }
+
+  function closeTutorial() {
+  tutorialOverlay.style.display = 'none';
+  tutorialMode = false;
+  clickedMask = 0;
+
+  if (puzzleData?.labels) {
+    labelA = puzzleData.labels.A;
+    labelB = puzzleData.labels.B;
+    labelC = puzzleData.labels.C;
+  }
+
+  if (gameStarted || puzzleCompleted) {
+    startOverlay.style.display = 'none';
+    entryBar.style.display = puzzleCompleted ? 'none' : 'block';
+    if (helpBtn) helpBtn.style.display = 'flex';
+    if (hint) hint.style.display = puzzleCompleted ? 'none' : 'block';
+  } else {
+    startOverlay.style.display = 'flex';
+  }
+
+  drawBase();
+}
 
   function flashRegion(mask, color = "green") {
   flashingMask = mask;
@@ -943,6 +970,7 @@ drawBase();
   startBtn.addEventListener('click', () => {
     tutorialMode = false;
     gameStarted = true;
+    if (helpBtn) helpBtn.style.display = 'flex';
     startOverlay.style.display = 'none';
     canvas.classList.remove('prestart');
     entryBar.style.display = 'block';
@@ -975,40 +1003,18 @@ drawBase();
   });
 
   tutorialNext.addEventListener('click', () => {
-    if (tutorialStep < tutorialSteps.length - 1) {
-      tutorialStep++;
-      renderTutorialStep();
-      return;
-    }
+  if (tutorialStep < tutorialSteps.length - 1) {
+    tutorialStep++;
+    renderTutorialStep();
+    return;
+  }
 
-    tutorialOverlay.style.display = 'none';
-    tutorialMode = false;
-    clickedMask = 0;
-
-    if (puzzleData?.labels) {
-      labelA = puzzleData.labels.A;
-      labelB = puzzleData.labels.B;
-      labelC = puzzleData.labels.C;
-    }
-
-    drawBase();
-    startOverlay.style.display = 'flex';
-  });
+  closeTutorial();
+});
 
   tutorialExit.addEventListener('click', () => {
-    tutorialOverlay.style.display = 'none';
-    tutorialMode = false;
-    clickedMask = 0;
-
-    if (puzzleData?.labels) {
-      labelA = puzzleData.labels.A;
-      labelB = puzzleData.labels.B;
-      labelC = puzzleData.labels.C;
-    }
-
-    drawBase();
-    startOverlay.style.display = 'flex';
-  });
+  closeTutorial();
+});
 
   submitWordBtn.addEventListener('click', submitWord);
 
@@ -1100,6 +1106,20 @@ https://venngame-ncza.onrender.com/`;
       drawRegion(lastMask);
     }
   });
+
+helpBtn.addEventListener('click', () => {
+  tutorialStep = 0;
+  tutorialMode = true;
+
+  labelA = tutorialLabels.A;
+  labelB = tutorialLabels.B;
+  labelC = tutorialLabels.C;
+
+  tutorialOverlay.style.display = 'flex';
+
+  drawBase();
+  renderTutorialStep();
+});
 
 
 const stageEl = document.getElementById('stage');

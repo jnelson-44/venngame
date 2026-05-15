@@ -50,6 +50,57 @@ body{
   display:none;
 }
 
+#helpBtn{
+  display:none;
+  align-items:center;
+  justify-content:center;
+
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+
+  width:42px;
+  height:42px;
+
+  padding:0;
+  border-radius:999px;
+  border:1px solid var(--line);
+
+  background:#ffffff;
+  color:var(--accent-deep);
+
+  box-shadow:0 4px 12px rgba(63,143,209,0.10);
+}
+
+#helpBtn svg{
+  width:20px;
+  height:20px;
+  fill:currentColor;
+}
+
+#helpBtn:hover{
+  background:var(--bg-soft);
+  border-color:var(--line-strong);
+}
+
+/* Desktop */
+@media (min-width:769px){
+
+  #helpBtn{
+    right:0;
+  }
+
+}
+
+/* Mobile */
+@media (max-width:768px){
+
+  #helpBtn{
+    left:6px;
+  }
+
+}
+
 @media (max-width:768px){
 
   #mobileStatsBtn{
