@@ -51,6 +51,8 @@
   const entryStatus = document.getElementById('entryStatus');
   const hint = document.querySelector('.hint');
 
+  const shareSavedResult = document.getElementById('shareSavedResult');
+
   let gameStarted = false;
   let tutorialMode = false;
   let timerInterval = null;
@@ -565,9 +567,13 @@ if (flashingMask && flashAlpha !== null) {
     const elapsedMs = Date.now() - startTime;
     const solveTimeSeconds = Math.floor(elapsedMs / 1000);
     finalShareTime = formatTime(elapsedMs);
+    saveGameState();
 
     completeTime.textContent = `Your time: ${finalShareTime}`;
     completeOverlay.style.display = "flex";
+    if (shareSavedResult) {
+  shareSavedResult.style.display = "block";
+}
 
     updateStreakOnSolve();
 
@@ -640,6 +646,7 @@ if (!mask) {
 }
 
     notes[mask] = word;
+    saveGameState();
     wordInput.value = "";
     lastMask = mask;
 
@@ -670,6 +677,14 @@ if (!mask) {
       console.error("Failed to load stats:", err);
     }
   }
+
+  async function copyShareText() {
+  const shareText = `I finished today’s Intersection puzzle in ${finalShareTime}. Can you beat my time?
+
+https://venngame-ncza.onrender.com/`;
+
+  await navigator.clipboard.writeText(shareText);
+}
 
   function getTodayLocalString() {
     const now = new Date();
@@ -750,6 +765,67 @@ if (!mask) {
     renderStreak();
   }
 
+  function getGameStateKey() {
+  return `intersection_game_${puzzleData?.id || "unknown"}`;
+}
+
+function saveGameState() {
+  if (!puzzleData?.id) return;
+
+  localStorage.setItem(getGameStateKey(), JSON.stringify({
+    notes,
+    gameStarted,
+    puzzleCompleted,
+    startTime,
+    finalShareTime
+  }));
+}
+
+function loadGameState() {
+  if (!puzzleData?.id) return;
+
+  const raw = localStorage.getItem(getGameStateKey());
+  if (!raw) return;
+
+  try {
+    const state = JSON.parse(raw);
+
+    Object.assign(notes, state.notes || {});
+    gameStarted = !!state.gameStarted;
+    puzzleCompleted = !!state.puzzleCompleted;
+    startTime = state.startTime || null;
+    finalShareTime = state.finalShareTime || "0:00";
+
+    if (gameStarted || puzzleCompleted) {
+      startOverlay.style.display = "none";
+      entryBar.style.display = puzzleCompleted ? "none" : "block";
+      if (hint) hint.style.display = puzzleCompleted ? "none" : "block";
+      timerEl.style.visibility = "visible";
+    }
+
+    if (puzzleCompleted) {
+      timerEl.textContent = finalShareTime;
+      if (shareSavedResult) {
+    shareSavedResult.style.display = "block";
+  }
+    } else if (gameStarted && startTime) {
+      startTimerFromSavedStart();
+    }
+
+  } catch {
+    localStorage.removeItem(getGameStateKey());
+  }
+}
+
+function startTimerFromSavedStart() {
+  if (timerInterval) clearInterval(timerInterval);
+
+  timerInterval = setInterval(() => {
+    const elapsed = Date.now() - startTime;
+    timerEl.textContent = formatTime(elapsed);
+  }, 250);
+}
+
   async function loadPuzzleData() {
     let puzzleToLoad = "current";
     const queryParams = new URLSearchParams(window.location.search);
@@ -777,6 +853,8 @@ if (!mask) {
           regionTextPositions[mask] = center;
         }
       }
+
+      loadGameState();
 
       drawBase();
       renderStreak();
@@ -971,6 +1049,13 @@ https://venngame-ncza.onrender.com/`;
         "<strong>Copy failed</strong><br>Your browser blocked clipboard access on this page.";
     }
   });
+
+  if (shareSavedResult) {
+  shareSavedResult.addEventListener('click', () => {
+    completeTime.textContent = `Your time: ${finalShareTime}`;
+    completeOverlay.style.display = "flex";
+  });
+}
 
   if (mobileStatsBtn) {
     mobileStatsBtn.addEventListener('click', () => {

@@ -124,6 +124,8 @@ body{
 /* GAME CARD */
 
 .game-card{
+  position:relative;
+
   background:linear-gradient(180deg, var(--card) 0%, var(--card-tint) 100%);
   border-radius:var(--radius);
   box-shadow:var(--shadow);
@@ -522,6 +524,16 @@ button:hover{
   background:var(--accent-deep);
 }
 
+#shareSavedResult{
+  position:absolute;
+  top:20px;
+  left:20px;
+  z-index:50;
+  width:auto;
+  margin:0;
+  display:none;
+}
+
 
 
 /* MOBILE STATS PANEL */
@@ -602,10 +614,10 @@ button:hover{
 }
 
   .game-card{
-    padding:10px;
-    display:flex;
-    flex-direction:column;
-  }
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+}
 
   #entryBar{
     position:static;
