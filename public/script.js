@@ -74,6 +74,9 @@
   let flashingMask = 0;
 let flashStartTime = 0;
 let flashColor = "green";
+let completionGlowStartTime = 0;
+
+const completionGlowDuration = 900;
 const flashDuration = 1000;
 
   let lastMask = 0;
@@ -449,6 +452,21 @@ if (flashingMask && flashAlpha !== null) {
   drawRegion(flashingMask, color);
 }
 
+if (completionGlowStartTime) {
+  const elapsed = Date.now() - completionGlowStartTime;
+
+  if (elapsed < completionGlowDuration) {
+    const t = elapsed / completionGlowDuration;
+    const alpha = 0.45 * (1 - t);
+
+    for (let mask = 1; mask <= 7; mask++) {
+      drawRegion(mask, `rgba(90,169,230,${alpha})`);
+    }
+  } else {
+    completionGlowStartTime = 0;
+  }
+}
+
     if (!tutorialMode) {
   for (const [key, word] of Object.entries(notes)) {
     drawRegionWord(Number(key), word);
@@ -594,10 +612,40 @@ if (flashingMask && flashAlpha !== null) {
     const elapsedMs = Date.now() - startTime;
     const solveTimeSeconds = Math.floor(elapsedMs / 1000);
     finalShareTime = formatTime(elapsedMs);
-    saveGameState();
+saveGameState();
 
-    completeTime.textContent = `Your time: ${finalShareTime}`;
-    completeOverlay.style.display = "flex";
+timerEl.textContent = finalShareTime;
+timerEl.classList.remove("completePulse");
+void timerEl.offsetWidth;
+timerEl.classList.add("completePulse");
+
+completeTime.textContent = `Your time: ${finalShareTime}`;
+completionGlowStartTime = Date.now();
+
+function animateCompletionGlow() {
+  drawBase();
+
+  if (completionGlowStartTime) {
+    requestAnimationFrame(animateCompletionGlow);
+  }
+}
+
+requestAnimationFrame(animateCompletionGlow);
+
+if (window.confetti) {
+  confetti({
+    particleCount: 35,
+    spread: 55,
+    startVelocity: 28,
+    scalar: 0.8,
+    origin: { y: 0.62 }
+  });
+}
+
+setTimeout(() => {
+  completeOverlay.style.display = "flex";
+  completeOverlay.classList.add("show");
+}, 500);
   
 
     updateStreakOnSolve();
@@ -1027,6 +1075,7 @@ drawBase();
 
   completeClose.addEventListener('click', () => {
   completeOverlay.style.display = "none";
+  completeOverlay.classList.remove("show");
 
   if (shareSavedResult && puzzleCompleted) {
     shareSavedResult.style.display = "block";
