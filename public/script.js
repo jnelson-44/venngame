@@ -645,9 +645,14 @@ if (!mask) {
   return;
 }
 
-    notes[mask] = word;
-    saveGameState();
-    wordInput.value = "";
+
+
+notes[mask] = word;
+saveGameState();
+
+
+
+wordInput.value = "";
     lastMask = mask;
 
     statusMessage.textContent = "Valid word";
@@ -770,7 +775,12 @@ https://venngame-ncza.onrender.com/`;
 }
 
 function saveGameState() {
-  if (!puzzleData?.id) return;
+  if (!puzzleData?.id) {
+    console.log("Not saving: no puzzleData.id");
+    return;
+  }
+
+
 
   localStorage.setItem(getGameStateKey(), JSON.stringify({
     notes,
