@@ -4,11 +4,16 @@ from src.lib.Puzzle.Criteria import Not
 
 puzzle_config = {
     "2026-05-15": [
+        Common.StartsWith("b"),
+        Common.EndsWith("t"),
+        Length.ExactLength(7)
+    ],
+    "2026-05-13": [
         Common.EndsWith("r"),
         Length.AtLeastLength(8),
         Common.HasDoubleLetters()
     ],
-    "2026-05-01": [
+    "2026-05-12": [
         Common.EndsWith("r"),
         Length.AtMostLength(8),
         Common.ScrabbleScoreAtLeast(14)

@@ -571,9 +571,7 @@ if (flashingMask && flashAlpha !== null) {
 
     completeTime.textContent = `Your time: ${finalShareTime}`;
     completeOverlay.style.display = "flex";
-    if (shareSavedResult) {
-  shareSavedResult.style.display = "block";
-}
+  
 
     updateStreakOnSolve();
 
@@ -1022,8 +1020,12 @@ drawBase();
   });
 
   completeClose.addEventListener('click', () => {
-    completeOverlay.style.display = "none";
-  });
+  completeOverlay.style.display = "none";
+
+  if (shareSavedResult && puzzleCompleted) {
+    shareSavedResult.style.display = "block";
+  }
+});
 
   shareResults.addEventListener('click', async () => {
     const shareText = `I finished today’s Intersection puzzle in ${finalShareTime}. Can you beat my time?
@@ -1053,6 +1055,10 @@ https://venngame-ncza.onrender.com/`;
 
 
       completeTime.innerHTML = "<strong>Copied</strong><br>Thanks for playing!";
+
+      if (shareSavedResult && puzzleCompleted) {
+      shareSavedResult.style.display = "block";
+    }
     } catch (err) {
       console.error("Clipboard copy failed:", err);
       completeTime.innerHTML =
