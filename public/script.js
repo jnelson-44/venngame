@@ -53,6 +53,8 @@
   const helpBtn = document.getElementById('helpBtn');
 
   const shareSavedResult = document.getElementById('shareSavedResult');
+  const puzzleNumberEl = document.getElementById('puzzleNumber');
+const nextPuzzleCountdown = document.getElementById('nextPuzzleCountdown');
 
 
   let gameStarted = false;
@@ -78,6 +80,7 @@ let completionGlowStartTime = 0;
 
 const completionGlowDuration = 900;
 const flashDuration = 1000;
+const PUZZLE_EPOCH = "2026-05-15";
 
   let lastMask = 0;
   let clickedMask = 0;
@@ -85,6 +88,8 @@ const flashDuration = 1000;
   let clickedMaskTimeout = null;
 
   const notes = {};
+
+  
 
   const tutorialLabels = {
     A: "Contains the letter V",
@@ -130,6 +135,36 @@ const flashDuration = 1000;
       highlight: null
     }
   ];
+
+  function getPuzzleNumber(puzzleId) {
+  const epoch = new Date(`${PUZZLE_EPOCH}T00:00:00`);
+  const current = new Date(`${puzzleId}T00:00:00`);
+
+  const diffMs = current - epoch;
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  return diffDays + 1;
+}
+
+  function updateNextPuzzleCountdown() {
+  if (!nextPuzzleCountdown) return;
+
+  const now = new Date();
+
+  const nextMidnight = new Date(now);
+  nextMidnight.setDate(now.getDate() + 1);
+  nextMidnight.setHours(0, 0, 0, 0);
+
+  const diffMs = nextMidnight - now;
+
+  const totalMinutes = Math.floor(diffMs / 60000);
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  nextPuzzleCountdown.textContent =
+    `Next puzzle in ${hours}h ${minutes}m`;
+}
 
   function setStatus(message, color) {
     statusMessage.textContent = message;
@@ -922,6 +957,14 @@ function startTimerFromSavedStart() {
       }
 
       puzzleData = await response.json();
+
+      if (puzzleNumberEl && puzzleData.id) {
+  puzzleNumberEl.textContent =
+    `Puzzle #${getPuzzleNumber(puzzleData.id)}`;
+}
+
+updateNextPuzzleCountdown();
+setInterval(updateNextPuzzleCountdown, 60000);
 
       if (puzzleData.labels) {
         labelA = puzzleData.labels.A || labelA;
