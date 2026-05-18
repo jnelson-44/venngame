@@ -569,26 +569,44 @@ if (completionGlowStartTime) {
   }
 
   async function findRegionForWord(word) {
-    let regionId = 0;
+  let regionId = 0;
 
-    // TODO: Ensure no spaces in word - in that case it would certainly be invalid,
-    //       so raise an error here and don't even bother sending to server
+  // Reject spaces before hitting the server
+  if (/\s/.test(word)) {
+    return -3;
+  }
 
-    try {
-      const response = await fetch(`/api/puzzles/${encodeURIComponent(puzzleData.id)}/words/${encodeURIComponent(word)}`);
-      if (response.status === 404) {
-        console.log(`Word "${word}" is not in dictionary`);
-        return -1;
-      }
-      const regionInfo = await response.json();
-      regionId = regionInfo.region_id;
-      console.log(`Word "${word}" is in region ${regionId}`);
-    } catch (err) {
-      console.error("Failed to issue word check against API:", err);
+  try {
+    const response = await fetch(
+      `/api/puzzles/${encodeURIComponent(puzzleData.id)}/words/${encodeURIComponent(word)}`
+    );
+
+    if (response.status === 400) {
+      return -2;
     }
 
-    return regionId;
+    if (response.status === 404) {
+      console.log(`Word "${word}" is not in dictionary`);
+      return -1;
+    }
+
+    if (!response.ok) {
+      console.error(`Word check failed with status ${response.status}`);
+      return 0;
+    }
+
+    const regionInfo = await response.json();
+
+    regionId = regionInfo.region_id;
+
+    console.log(`Word "${word}" is in region ${regionId}`);
+
+  } catch (err) {
+    console.error("Failed to issue word check against API:", err);
   }
+
+  return regionId;
+}
 
   function closeTutorial() {
   tutorialOverlay.style.display = 'none';
@@ -731,12 +749,26 @@ setTimeout(() => {
 
 const mask = await findRegionForWord(word);
 
-    if (mask === -1) {
-      statusMessage.textContent = "That word is not in the dictionary.";
-      statusMessage.style.color = "#c62828";
-      animateInputError();
-      return;
-    }
+if (mask === -3) {
+  statusMessage.textContent = "Please enter a single word.";
+  statusMessage.style.color = "#c62828";
+  animateInputError();
+  return;
+}
+
+if (mask === -2) {
+  statusMessage.textContent = "That word is not allowed.";
+  statusMessage.style.color = "#c62828";
+  animateInputError();
+  return;
+}
+
+if (mask === -1) {
+  statusMessage.textContent = "That word is not in the dictionary.";
+  statusMessage.style.color = "#c62828";
+  animateInputError();
+  return;
+}
 
 if (!mask) {
   statusMessage.textContent = "That word doesn't belong in any region.";
