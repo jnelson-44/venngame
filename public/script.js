@@ -824,7 +824,7 @@ wordInput.value = "";
   }
 
   async function copyShareText() {
-  const shareText = `I finished today’s Intersection puzzle in ${finalShareTime}. Can you beat my time?
+  const shareText = `I finished Intersection #${getPuzzleNumber(puzzleData.id)} in ${finalShareTime}.
 
 https://venngame-ncza.onrender.com/`;
 
@@ -1158,7 +1158,7 @@ drawBase();
 });
 
   shareResults.addEventListener('click', async () => {
-  const shareText = `I finished today’s Intersection puzzle in ${finalShareTime}. Can you beat my time?
+  const shareText = `I finished Intersection #${getPuzzleNumber(puzzleData.id)} in ${finalShareTime}.
 
 https://venngame-ncza.onrender.com/`;
 
