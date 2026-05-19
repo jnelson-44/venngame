@@ -18,12 +18,12 @@ class TestPuzzle(unittest.TestCase):
 
         # Set up Date mocking
         #  NOTE: Mock return values are defined within each individual test case, below
-        self.date_patcher = patch("src.lib.Puzzle.date")
-        self.mock_date = self.date_patcher.start()
+        self.datetime_patcher = patch("src.lib.Puzzle.datetime")
+        self.mock_datetime = self.datetime_patcher.start()
 
     def tearDown(self):
         self.config_patcher.stop()
-        self.date_patcher.stop()
+        self.datetime_patcher.stop()
 
 
     def test_get_by_id(self):
@@ -34,16 +34,16 @@ class TestPuzzle(unittest.TestCase):
 
     def test_get_current_directly_selects_today(self):
         """Get Current: Ensure that the current day's puzzle is returned directly if it exists"""
-        self.mock_date.today.return_value = date(2026, 2, 1)
+        self.mock_datetime.now.return_value.date.return_value.isoformat.return_value = "2026-02-01"
         self.assertEqual(get_current().id, "2026-02-01")
 
     def test_get_current_falls_back_to_latest(self):
         """Get Current: Ensure the most-recent, unpassed date is returned, despite unordered config"""
-        self.mock_date.today.return_value = date(2026, 3, 17)
+        self.mock_datetime.now.return_value.date.return_value.isoformat.return_value = "2026-03-17"
         self.assertEqual(get_current().id, "2026-03-15")
 
     def test_get_current_returns_earliest_if_unconfigured(self):
         """Get Current: Ensure the earliest configured is returned if today is less than such"""
-        self.mock_date.today.return_value = date(2023, 2, 1)
+        self.mock_datetime.now.return_value.date.return_value.isoformat.return_value = "2023-02-01"
         self.assertEqual(get_current().id, "2026-02-01")
 
