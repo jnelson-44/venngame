@@ -1,11 +1,14 @@
-from datetime import date
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from src.lib import Dictionary
 from src.lib.Puzzle.Criteria import Criterion
 from src.lib.Puzzle.Config import puzzle_config
 
+EASTERN = ZoneInfo("America/New_York")
+
 def get_current() -> Puzzle:
     # Grab the Puzzle with the current date if it exists
-    today_id = date.today().isoformat()
+    today_id = datetime.now(EASTERN).date().isoformat()
     today_puzzle = get_by_id(today_id)
     if today_puzzle:
         return today_puzzle

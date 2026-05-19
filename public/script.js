@@ -146,19 +146,51 @@ const PUZZLE_EPOCH = "2026-05-15";
   return diffDays + 1;
 }
 
-  function updateNextPuzzleCountdown() {
+  function getNextEasternMidnight() {
+  const now = new Date();
+
+  const easternParts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric"
+  }).formatToParts(now);
+
+  const values = Object.fromEntries(
+    easternParts.map(part => [part.type, part.value])
+  );
+
+  const easternYear = Number(values.year);
+  const easternMonth = Number(values.month);
+  const easternDay = Number(values.day);
+
+  let guess = new Date(Date.UTC(easternYear, easternMonth - 1, easternDay + 1, 5, 0, 0));
+
+  for (let i = 0; i < 6; i++) {
+    const formatted = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      hour: "numeric",
+      hour12: false
+    }).format(guess);
+
+    const easternHour = Number(formatted);
+
+    if (easternHour === 0) break;
+
+    guess = new Date(guess.getTime() - easternHour * 60 * 60 * 1000);
+  }
+
+  return guess;
+}
+
+function updateNextPuzzleCountdown() {
   if (!nextPuzzleCountdown) return;
 
   const now = new Date();
-
-  const nextMidnight = new Date(now);
-  nextMidnight.setDate(now.getDate() + 1);
-  nextMidnight.setHours(0, 0, 0, 0);
-
+  const nextMidnight = getNextEasternMidnight();
   const diffMs = nextMidnight - now;
 
-  const totalMinutes = Math.floor(diffMs / 60000);
-
+  const totalMinutes = Math.max(0, Math.floor(diffMs / 60000));
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
 
