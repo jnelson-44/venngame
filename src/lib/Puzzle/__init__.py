@@ -29,17 +29,19 @@ def get_current() -> Puzzle:
         prev_crit = next_crit
 
     # Finally, return the last found valid config - that is the "current" puzzle
-    return Puzzle(prev_id, prev_crit)
+    return Puzzle(prev_id, prev_crit["criteria"], prev_crit["difficulty"])
 
 def get_by_id(puzz_id:str) -> Puzzle | None:
     if puzz_id in puzzle_config:
-        return Puzzle(puzz_id, puzzle_config[puzz_id])
+        config = puzzle_config[puzz_id]
+        return Puzzle(puzz_id, config["criteria"], config["difficulty"])
     return None
 
 class Puzzle:
-    def __init__(self, id:str, criteria:list[Criterion]):
+    def __init__(self, id:str, criteria:list[Criterion], difficulty:str):
         self.id = id
         self.criteria = criteria
+        self.difficulty = difficulty
 
     def get_region_for_word(self, word:str) -> tuple[int, list[Criterion]]:
         mask:int = 0

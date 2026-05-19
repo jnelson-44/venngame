@@ -68,6 +68,9 @@ const helpPanelClose = document.getElementById('helpPanelClose');
   const puzzleNumberEl = document.getElementById('puzzleNumber');
 const nextPuzzleCountdown = document.getElementById('nextPuzzleCountdown');
 
+const difficultyValue = document.getElementById('difficultyValue');
+const mobileDifficultyValue = document.getElementById('mobileDifficultyValue');
+
 
   let gameStarted = false;
   let tutorialMode = false;
@@ -1050,6 +1053,14 @@ function startTimerFromSavedStart() {
       }
 
       puzzleData = await response.json();
+
+      if (difficultyValue && puzzleData.difficulty) {
+  difficultyValue.textContent = puzzleData.difficulty;
+}
+
+if (mobileDifficultyValue && puzzleData.difficulty) {
+  mobileDifficultyValue.textContent = puzzleData.difficulty;
+}
 
       if (puzzleNumberEl && puzzleData.id) {
   puzzleNumberEl.textContent =

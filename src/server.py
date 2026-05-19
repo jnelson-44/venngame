@@ -54,6 +54,7 @@ root.mount("/", StaticFiles(directory="public",html=True), name="static")
 def map_puzzle_to_response(p:Puzzle.Puzzle):
     return {
         "id": p.id,
+        "difficulty": p.difficulty,
         "labels": {
             "A": p.criteria[0].label,
             "B": p.criteria[1].label,

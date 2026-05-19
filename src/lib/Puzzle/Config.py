@@ -3,11 +3,14 @@ import src.lib.Puzzle.Criteria.Length as Length
 from src.lib.Puzzle.Criteria import Not
 
 puzzle_config = {
-    "2026-05-19": [
-        Common.EndsWith("r"),
+    "2026-05-19": {
+    "difficulty": "Hard",
+    "criteria": [
+        Common.StartsWith("s"),
         Length.AtLeastLength(8),
         Common.HasDoubleLetters()
-    ],
+    ]
+},
     "2026-05-15": [
         Common.StartsWith("b"),
         Common.EndsWith("t"),
