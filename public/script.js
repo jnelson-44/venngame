@@ -51,8 +51,18 @@
   const entryStatus = document.getElementById('entryStatus');
   const hint = document.querySelector('.hint');
   const helpBtn = document.getElementById('helpBtn');
+  const howToPlayBtn = document.getElementById('howToPlayBtn');
+const faqBtn = document.getElementById('faqBtn');
+const aboutBtn = document.getElementById('aboutBtn');
+const creatorBtn = document.getElementById('creatorBtn');
+
+const helpPanel = document.getElementById('helpPanel');
+const helpPanelTitle = document.getElementById('helpPanelTitle');
+const helpPanelText = document.getElementById('helpPanelText');
+const helpPanelClose = document.getElementById('helpPanelClose');
 
   const shareSavedResult = document.getElementById('shareSavedResult');
+  const resetPuzzleBtn = document.getElementById('resetPuzzleBtn');
   const puzzleNumberEl = document.getElementById('puzzleNumber');
 const nextPuzzleCountdown = document.getElementById('nextPuzzleCountdown');
 
@@ -146,19 +156,51 @@ const PUZZLE_EPOCH = "2026-05-15";
   return diffDays + 1;
 }
 
-  function updateNextPuzzleCountdown() {
+  function getNextEasternMidnight() {
+  const now = new Date();
+
+  const easternParts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric"
+  }).formatToParts(now);
+
+  const values = Object.fromEntries(
+    easternParts.map(part => [part.type, part.value])
+  );
+
+  const easternYear = Number(values.year);
+  const easternMonth = Number(values.month);
+  const easternDay = Number(values.day);
+
+  let guess = new Date(Date.UTC(easternYear, easternMonth - 1, easternDay + 1, 5, 0, 0));
+
+  for (let i = 0; i < 6; i++) {
+    const formatted = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      hour: "numeric",
+      hour12: false
+    }).format(guess);
+
+    const easternHour = Number(formatted);
+
+    if (easternHour === 0) break;
+
+    guess = new Date(guess.getTime() - easternHour * 60 * 60 * 1000);
+  }
+
+  return guess;
+}
+
+function updateNextPuzzleCountdown() {
   if (!nextPuzzleCountdown) return;
 
   const now = new Date();
-
-  const nextMidnight = new Date(now);
-  nextMidnight.setDate(now.getDate() + 1);
-  nextMidnight.setHours(0, 0, 0, 0);
-
+  const nextMidnight = getNextEasternMidnight();
   const diffMs = nextMidnight - now;
 
-  const totalMinutes = Math.floor(diffMs / 60000);
-
+  const totalMinutes = Math.max(0, Math.floor(diffMs / 60000));
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
 
@@ -569,26 +611,44 @@ if (completionGlowStartTime) {
   }
 
   async function findRegionForWord(word) {
-    let regionId = 0;
+  let regionId = 0;
 
-    // TODO: Ensure no spaces in word - in that case it would certainly be invalid,
-    //       so raise an error here and don't even bother sending to server
+  // Reject spaces before hitting the server
+  if (/\s/.test(word)) {
+    return -3;
+  }
 
-    try {
-      const response = await fetch(`/api/puzzles/${encodeURIComponent(puzzleData.id)}/words/${encodeURIComponent(word)}`);
-      if (response.status === 404) {
-        console.log(`Word "${word}" is not in dictionary`);
-        return -1;
-      }
-      const regionInfo = await response.json();
-      regionId = regionInfo.region_id;
-      console.log(`Word "${word}" is in region ${regionId}`);
-    } catch (err) {
-      console.error("Failed to issue word check against API:", err);
+  try {
+    const response = await fetch(
+      `/api/puzzles/${encodeURIComponent(puzzleData.id)}/words/${encodeURIComponent(word)}`
+    );
+
+    if (response.status === 400) {
+      return -2;
     }
 
-    return regionId;
+    if (response.status === 404) {
+      console.log(`Word "${word}" is not in dictionary`);
+      return -1;
+    }
+
+    if (!response.ok) {
+      console.error(`Word check failed with status ${response.status}`);
+      return 0;
+    }
+
+    const regionInfo = await response.json();
+
+    regionId = regionInfo.region_id;
+
+    console.log(`Word "${word}" is in region ${regionId}`);
+
+  } catch (err) {
+    console.error("Failed to issue word check against API:", err);
   }
+
+  return regionId;
+}
 
   function closeTutorial() {
   tutorialOverlay.style.display = 'none';
@@ -731,12 +791,26 @@ setTimeout(() => {
 
 const mask = await findRegionForWord(word);
 
-    if (mask === -1) {
-      statusMessage.textContent = "That word is not in the dictionary.";
-      statusMessage.style.color = "#c62828";
-      animateInputError();
-      return;
-    }
+if (mask === -3) {
+  statusMessage.textContent = "Please enter a single word.";
+  statusMessage.style.color = "#c62828";
+  animateInputError();
+  return;
+}
+
+if (mask === -2) {
+  statusMessage.textContent = "That word is not allowed.";
+  statusMessage.style.color = "#c62828";
+  animateInputError();
+  return;
+}
+
+if (mask === -1) {
+  statusMessage.textContent = "That word is not in the dictionary.";
+  statusMessage.style.color = "#c62828";
+  animateInputError();
+  return;
+}
 
 if (!mask) {
   statusMessage.textContent = "That word doesn't belong in any region.";
@@ -792,7 +866,7 @@ wordInput.value = "";
   }
 
   async function copyShareText() {
-  const shareText = `I finished today’s Intersection puzzle in ${finalShareTime}. Can you beat my time?
+  const shareText = `I finished Intersection #${getPuzzleNumber(puzzleData.id)} in ${finalShareTime}.
 
 https://venngame-ncza.onrender.com/`;
 
@@ -920,6 +994,10 @@ function loadGameState() {
       if (hint) hint.style.display = puzzleCompleted ? "none" : "block";
       timerEl.style.visibility = "visible";
     }
+
+    if (window.innerWidth < 760 && resetPuzzleBtn) {
+  resetPuzzleBtn.style.display = "block";
+}
 
     if (puzzleCompleted) {
       timerEl.textContent = finalShareTime;
@@ -1126,7 +1204,7 @@ drawBase();
 });
 
   shareResults.addEventListener('click', async () => {
-  const shareText = `I finished today’s Intersection puzzle in ${finalShareTime}. Can you beat my time?
+  const shareText = `I finished Intersection #${getPuzzleNumber(puzzleData.id)} in ${finalShareTime}.
 
 https://venngame-ncza.onrender.com/`;
 
@@ -1227,6 +1305,17 @@ https://venngame-ncza.onrender.com/`;
     });
   }
 
+  if (resetPuzzleBtn) {
+  resetPuzzleBtn.addEventListener('click', () => {
+
+    Object.keys(localStorage)
+      .filter(key => key.startsWith("intersection_game_"))
+      .forEach(key => localStorage.removeItem(key));
+
+    location.reload();
+  });
+}
+
   addEventListener('resize', () => {
     drawBase();
     if (lastMask && !notes[lastMask] && gameStarted && !tutorialMode) {
@@ -1234,7 +1323,32 @@ https://venngame-ncza.onrender.com/`;
     }
   });
 
-helpBtn.addEventListener('click', () => {
+const helpMenu = document.getElementById('helpMenu');
+const replayTutorialBtn = document.getElementById('replayTutorialBtn');
+
+helpBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+
+  helpMenu.classList.toggle('open');
+});
+
+document.addEventListener('click', () => {
+  helpMenu.classList.remove('open');
+  helpPanel.classList.remove('open');
+});
+
+helpPanel.addEventListener('click', (e) => {
+  e.stopPropagation();
+});
+
+helpMenu.addEventListener('click', (e) => {
+  e.stopPropagation();
+});
+
+replayTutorialBtn.addEventListener('click', () => {
+
+  helpMenu.classList.remove('open');
+
   tutorialStep = 0;
   tutorialMode = true;
 
@@ -1248,6 +1362,58 @@ helpBtn.addEventListener('click', () => {
   renderTutorialStep();
 });
 
+function openHelpPanel(title, html) {
+  helpMenu.classList.remove('open');
+  helpPanelTitle.textContent = title;
+  helpPanelText.innerHTML = html;
+  helpPanel.classList.add('open');
+}
+
+howToPlayBtn.addEventListener('click', () => {
+  openHelpPanel(
+    "How to Play",
+    `
+      <p>Each circle is a rule. Enter words that belong in each section of the diagram.</p>
+      <p>A word must go in the most specific region it satisfies. If it matches two rules, it belongs in the overlap, not a single-rule section.</p>
+      <p>Fill all seven regions to complete the puzzle.</p>
+    `
+  );
+});
+
+faqBtn.addEventListener('click', () => {
+  openHelpPanel(
+    "FAQ",
+    `
+      <p><strong>Why did my word go somewhere else?</strong><br>Words are placed automatically based on every rule they satisfy.</p>
+      <p><strong>When is there a new puzzle?</strong><br>A new puzzle appears every day at midnight Eastern time.</p>
+      <p><strong>Can I replay today’s puzzle?</strong><br>Your completed board stays saved for the day.</p>
+    `
+  );
+});
+
+aboutBtn.addEventListener('click', () => {
+  openHelpPanel(
+    "About Intersection",
+    `
+      <p>Intersection is a daily word game about overlaps, logic, and finding the perfect word for each region.</p>
+      <p>The goal is simple: complete the diagram as fast as you can.</p>
+    `
+  );
+});
+
+creatorBtn.addEventListener('click', () => {
+  openHelpPanel(
+    "Creator",
+    `
+      <p>Created by Jack Nelson.</p>
+      <p>Built as a daily puzzle game for people who like words, patterns, and clean little logic challenges.</p>
+    `
+  );
+});
+
+helpPanelClose.addEventListener('click', () => {
+  helpPanel.classList.remove('open');
+});
 
 const stageEl = document.getElementById('stage');
 

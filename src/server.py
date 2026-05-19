@@ -5,6 +5,25 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+
+with open("src/data/badwords.txt") as f:
+    BAD_WORDS = {
+        line.strip().lower()
+        for line in f
+        if line.strip()
+    }
+
+def clean_word(word: str) -> str:
+    return "".join(ch for ch in word.lower().strip() if ch.isalpha())
+
+def is_bad_word(word: str) -> bool:
+    cleaned = clean_word(word)
+
+    if len(cleaned) < 3:
+        return False
+
+    return cleaned in BAD_WORDS
+
 ########################################
 # DATABASE & SERVER INIT               #
 ########################################
@@ -63,11 +82,18 @@ async def get_puzzle_by_id(puzzle_id:str):
 async def get_word_for_puzzle(puzzle_id:str, word:str):
     """Get details about a word in the context of a given Puzzle"""
     puzzle = Puzzle.get_by_id(puzzle_id)
+
     if not puzzle:
         raise HTTPException(status_code=404, detail="Puzzle not found")
+
     if not await Dictionary.word_exists(word):
         raise HTTPException(status_code=404, detail="Word does not exist")
+
     region_id, criteria_matches = puzzle.get_region_for_word(word)
+
+    if region_id and is_bad_word(word):
+        raise HTTPException(status_code=400, detail="Word is not allowed")
+
     return {
         "id": str.lower(word),
         "input": word,
@@ -88,6 +114,12 @@ async def solve_puzzle(puzzle_id:str, s:SolutionBody):
     puzzle = Puzzle.get_by_id(puzzle_id)
     if not puzzle:
         raise HTTPException(status_code=404, detail="Puzzle not found")
+
+    if any(is_bad_word(word) for word in s.words):
+        raise HTTPException(
+            status_code=400,
+            detail="Solution contains a word that is not allowed"
+        )
     try:
         solved:bool = await puzzle.solve_with(s.words)
         if not solved:

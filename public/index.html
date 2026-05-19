@@ -101,10 +101,41 @@
 </div>
 
     <button id="helpBtn" aria-label="Open tutorial" title="Tutorial">
+    
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M12 18.2a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6zm0-15.2C8.5 3 6 5.2 6 8h2.4c0-1.5 1.3-2.7 3.1-2.7 1.7 0 3 1 3 2.5 0 1.2-.7 1.9-2 2.7-1.7 1-2.8 2.1-2.8 4.5v.5h2.4v-.4c0-1.5.7-2.2 2.2-3.1 1.6-.9 2.7-2.1 2.7-4.2C17 5.3 14.8 3 12 3z"/>
       </svg>
     </button>
+
+    <div id="helpMenu">
+
+  <button class="helpMenuItem" id="replayTutorialBtn">
+    Replay Tutorial
+  </button>
+
+  <button class="helpMenuItem" id="howToPlayBtn">
+  How to Play
+</button>
+
+<button class="helpMenuItem" id="faqBtn">
+  FAQ
+</button>
+
+<button class="helpMenuItem" id="aboutBtn">
+  About Intersection
+</button>
+
+<button class="helpMenuItem" id="creatorBtn">
+  Creator
+</button>
+
+</div>
+
+<div id="helpPanel">
+  <button id="helpPanelClose">×</button>
+  <h3 id="helpPanelTitle"></h3>
+  <div id="helpPanelText"></div>
+</div>
 
     <button id="mobileStatsBtn" aria-label="Open stats" title="Stats">
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -152,6 +183,9 @@
 
 <button id="shareSavedResult" class="secondary">
   Share result
+</button>
+<button id="resetPuzzleBtn" class="secondary">
+  Reset puzzle
 </button>
     <!-- WORD ENTRY BAR -->
     <div id="entryBar">
@@ -230,7 +264,7 @@
 
   <button id="shareResults" class="primary">Share Result</button>
 
-  <button id="completeClose" class="secondary">View Puzzle</button>
+  <button id="completeClose" aria-label="Close completion popup">×</button>
 
 </div>
 

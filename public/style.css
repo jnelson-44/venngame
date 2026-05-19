@@ -83,20 +83,151 @@ body{
   border-color:var(--line-strong);
 }
 
+#helpMenu{
+  position:absolute;
+
+  top:58px;
+  right:-290px;
+
+  width:230px;
+
+  display:none;
+  flex-direction:column;
+  gap:6px;
+
+  padding:10px;
+
+  background:#ffffff;
+  border:1px solid var(--line);
+  border-radius:18px;
+
+  box-shadow:0 18px 40px rgba(63,143,209,0.16);
+
+  z-index:3000;
+}
+
+#helpMenu.open{
+  display:flex;
+}
+
+.helpMenuItem{
+  width:100%;
+
+  text-align:left;
+
+  padding:12px 14px;
+
+  background:#ffffff;
+  border:none;
+  border-radius:12px;
+
+  color:var(--ink);
+
+  font-size:15px;
+}
+
+.helpMenuItem:hover{
+  background:var(--bg-soft);
+}
+
+#helpPanel{
+  position:absolute;
+  top:58px;
+  right:-290px;
+  width:300px;
+  display:none;
+  padding:18px;
+  background:#ffffff;
+  border:1px solid var(--line);
+  border-radius:18px;
+  box-shadow:0 18px 40px rgba(63,143,209,0.16);
+  z-index:3000;
+  text-align:left;
+}
+
+#helpPanel.open{
+  display:block;
+}
+
+#helpPanelClose{
+  position:absolute;
+  top:10px;
+  right:12px;
+  background:none;
+  border:none;
+  color:var(--accent-deep);
+  font-size:24px;
+  line-height:1;
+  padding:0;
+}
+
+#helpPanel h3{
+  margin:0 24px 10px 0;
+  color:var(--accent-deep);
+  font-size:17px;
+}
+
+#helpPanelText{
+  color:var(--muted);
+  font-size:14px;
+  line-height:1.45;
+}
+
+#helpPanelText p{
+  margin:0 0 10px;
+}
+
+#resetPuzzleBtn{
+  position:absolute;
+  top:20px;
+  left:140px;
+
+  z-index:50;
+
+  width:auto;
+  margin:0;
+
+  display:none;
+}
+
 /* Desktop */
 @media (min-width:769px){
 
-  #helpBtn{
-    right:0;
+  #helpBtn{ 
+    right:-250px;
   }
 
 }
 
 /* Mobile */
+
+@media (max-width:760px){
+
+  #tutorialBox{
+    transform:none;
+  }
+
+}
 @media (max-width:768px){
 
   #helpBtn{
     left:6px;
+    z-index:5000;
+  }
+
+  #helpMenu{
+    left:10px;
+    right:auto;
+    top:58px;
+    z-index:5001;
+  }
+
+  #helpPanel{
+    left:10px;
+    right:auto;
+    width:min(320px, calc(100vw - 20px));
+    top:58px;
+    z-index:5001;
   }
 
 }
@@ -440,10 +571,30 @@ button:hover{
 
 /* COMPLETE OVERLAY */
 
-#completeBox{
-  width:min(340px, calc(100% - 32px));
-  padding:26px 24px 22px;
-  border-radius:28px;
+
+#completeClose{
+  position:absolute;
+  top:12px;
+  right:14px;
+
+  padding:0;
+  margin:0;
+
+  background:none;
+  border:none;
+  box-shadow:none;
+
+  color:var(--accent-deep);
+
+  font-size:34px;
+  line-height:1;
+  font-weight:300;
+
+  cursor:pointer;
+}
+
+#completeClose:hover{
+  transform:translateY(-1px);
 }
 
 #completeBadge{
@@ -513,14 +664,9 @@ button:hover{
   box-shadow:0 14px 28px rgba(63,143,209,0.28);
 }
 
-#shareResults,
-#completeClose{
+#shareResults{
   width:100%;
   margin:0;
-}
-
-#completeClose{
-  margin-top:10px;
 }
 
 #completeOverlay.show{
@@ -561,11 +707,16 @@ button:hover{
 }
 
 #completeBox{
-  background:linear-gradient(180deg, #ffffff 0%, var(--card-tint) 100%);
-  padding:30px;
-  border-radius:var(--radius);
-  text-align:center;
+  position:relative;
+
+  width:min(340px, calc(100% - 32px));
   max-width:320px;
+
+  padding:26px 24px 22px;
+  border-radius:28px;
+
+  background:linear-gradient(180deg, #ffffff 0%, var(--card-tint) 100%);
+  text-align:center;
   border:1px solid var(--line);
   box-shadow:0 18px 45px rgba(63,143,209,0.16);
 }
@@ -593,6 +744,7 @@ button:hover{
   border-radius:24px;
   box-shadow:0 24px 70px rgba(63,143,209,0.16);
   padding:28px 28px 22px;
+  transform:translateX(-480px);
 }
 
 #tutorialContent h3{
@@ -669,6 +821,7 @@ button:hover{
 
   #tutorialBox{
     padding:22px 20px 18px;
+    transform:none;
   }
 
   .tutorialButtons{
@@ -772,11 +925,11 @@ button:hover{
 }
 
 #tutorialOverlay{
-  top:400px;
-  bottom:auto;
+  top:0;
+  bottom:0;
   align-items:flex-start;
   justify-content:center;
-  padding-top:0;
+  padding-top:420px;
 }
 
 #startBox{
