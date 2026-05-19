@@ -33,7 +33,8 @@
   const shareResults = document.getElementById('shareResults');
 
   const averageTimeValue = document.getElementById('averageTimeValue');
-  const playersSolvedValue = document.getElementById('playersSolvedValue');
+const totalPlaysValue = document.getElementById('totalPlaysValue');
+const solveRateValue = document.getElementById('solveRateValue');
   const currentStreakValue = document.getElementById('currentStreakValue');
   const bestStreakValue = document.getElementById('bestStreakValue');
 
@@ -41,7 +42,8 @@
   const mobileStatsOverlay = document.getElementById('mobileStatsOverlay');
   const mobileStatsClose = document.getElementById('mobileStatsClose');
   const mobileAverageTimeValue = document.getElementById('mobileAverageTimeValue');
-  const mobilePlayersSolvedValue = document.getElementById('mobilePlayersSolvedValue');
+const mobileTotalPlaysValue = document.getElementById('mobileTotalPlaysValue');
+const mobileSolveRateValue = document.getElementById('mobileSolveRateValue');
   const mobileCurrentStreakValue = document.getElementById('mobileCurrentStreakValue');
   const mobileBestStreakValue = document.getElementById('mobileBestStreakValue');
 
@@ -222,9 +224,13 @@ function updateNextPuzzleCountdown() {
     if (mobileAverageTimeValue && averageTimeValue) {
       mobileAverageTimeValue.textContent = averageTimeValue.textContent;
     }
-    if (mobilePlayersSolvedValue && playersSolvedValue) {
-      mobilePlayersSolvedValue.textContent = playersSolvedValue.textContent;
-    }
+    if (mobileTotalPlaysValue && totalPlaysValue) {
+  mobileTotalPlaysValue.textContent = totalPlaysValue.textContent;
+}
+
+if (mobileSolveRateValue && solveRateValue) {
+  mobileSolveRateValue.textContent = solveRateValue.textContent;
+}
     if (mobileCurrentStreakValue && currentStreakValue) {
       mobileCurrentStreakValue.textContent = currentStreakValue.textContent;
     }
@@ -845,25 +851,34 @@ wordInput.value = "";
   }
 
   async function loadStats() {
-    if (!puzzleData?.id) return;
+  if (!puzzleData?.id) return;
 
-    try {
-      const response = await fetch(`/api/puzzles/${encodeURIComponent(puzzleData.id)}/stats`);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+  try {
+    const response = await fetch(`/api/puzzles/${encodeURIComponent(puzzleData.id)}/stats`);
 
-      const stats = await response.json();
-
-      playersSolvedValue.textContent = String(stats.playersSolved || 0);
-      averageTimeValue.textContent =
-        stats.averageTime > 0 ? formatSeconds(stats.averageTime) : "--:--";
-
-      syncMobileStats();
-    } catch (err) {
-      console.error("Failed to load stats:", err);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
     }
+
+    const stats = await response.json();
+
+    totalPlaysValue.textContent =
+      String(stats.totalPlays || 0);
+
+    solveRateValue.textContent =
+      `${stats.solvePercent || 0}%`;
+
+    averageTimeValue.textContent =
+      stats.averageTime > 0
+        ? formatSeconds(stats.averageTime)
+        : "--:--";
+
+    syncMobileStats();
+
+  } catch (err) {
+    console.error("Failed to load stats:", err);
   }
+}
 
   async function copyShareText() {
   const shareText = `I finished Intersection #${getPuzzleNumber(puzzleData.id)} in ${finalShareTime}.
@@ -1145,6 +1160,13 @@ drawBase();
     entryBar.style.display = 'block';
     if (hint) hint.style.display = 'block';
     startTimer();
+    if (puzzleData?.id) {
+  fetch(`/api/puzzles/${encodeURIComponent(puzzleData.id)}/play`, {
+    method: "POST"
+  }).catch(err => {
+    console.error("Failed to record play:", err);
+  });
+}
     drawBase();
     wordInput.focus();
   });

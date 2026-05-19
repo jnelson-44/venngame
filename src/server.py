@@ -102,6 +102,22 @@ async def get_word_for_puzzle(puzzle_id:str, word:str):
         "region_matches": [match.label for match in criteria_matches]
     }
 
+@api.post("/puzzles/{puzzle_id}/play")
+async def record_play(puzzle_id:str):
+    """Record that a player started a Puzzle"""
+
+    puzzle = Puzzle.get_by_id(puzzle_id)
+
+    if not puzzle:
+        raise HTTPException(status_code=404, detail="Puzzle not found")
+
+    async with Database.get_pool().connection() as conn:
+        await conn.execute("""
+            INSERT INTO plays (puzzle_id)
+            VALUES (%s)
+        """, (puzzle_id,))
+
+    return { "success": True }
 
 # This object describes the shape of the request body for the POSTing of Solutions
 class SolutionBody(BaseModel):
@@ -145,14 +161,20 @@ async def get_puzzle_stats(puzzle_id:str):
     async with Database.get_pool().connection() as conn:
         query = await conn.execute("""
         SELECT
-            COUNT(*)::int AS "playersSolved",
-            ROUND(AVG(solve_time_seconds))::int AS "averageTime"
-        FROM solves
-        WHERE puzzle_id = %s
-        """, (puzzle_id,))
-    players_solved, avg_time = await query.fetchone()
+            (SELECT COUNT(*)::int FROM plays WHERE puzzle_id = %s) AS "totalPlays",
+            (SELECT COUNT(*)::int FROM solves WHERE puzzle_id = %s) AS "playersSolved",
+            (SELECT ROUND(AVG(solve_time_seconds))::int FROM solves WHERE puzzle_id = %s) AS "averageTime"
+        """, (puzzle_id, puzzle_id, puzzle_id))
+
+        total_plays, players_solved, avg_time = await query.fetchone()
+
+    solve_percent = 0
+    if total_plays and total_plays > 0:
+        solve_percent = round((players_solved / total_plays) * 100)
 
     return {
+        "totalPlays": 0 if total_plays is None else total_plays,
         "playersSolved": 0 if players_solved is None else players_solved,
+        "solvePercent": solve_percent,
         "averageTime": 0 if avg_time is None else avg_time
     }
