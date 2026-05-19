@@ -51,8 +51,18 @@
   const entryStatus = document.getElementById('entryStatus');
   const hint = document.querySelector('.hint');
   const helpBtn = document.getElementById('helpBtn');
+  const howToPlayBtn = document.getElementById('howToPlayBtn');
+const faqBtn = document.getElementById('faqBtn');
+const aboutBtn = document.getElementById('aboutBtn');
+const creatorBtn = document.getElementById('creatorBtn');
+
+const helpPanel = document.getElementById('helpPanel');
+const helpPanelTitle = document.getElementById('helpPanelTitle');
+const helpPanelText = document.getElementById('helpPanelText');
+const helpPanelClose = document.getElementById('helpPanelClose');
 
   const shareSavedResult = document.getElementById('shareSavedResult');
+  const resetPuzzleBtn = document.getElementById('resetPuzzleBtn');
   const puzzleNumberEl = document.getElementById('puzzleNumber');
 const nextPuzzleCountdown = document.getElementById('nextPuzzleCountdown');
 
@@ -985,6 +995,10 @@ function loadGameState() {
       timerEl.style.visibility = "visible";
     }
 
+    if (window.innerWidth < 760 && resetPuzzleBtn) {
+  resetPuzzleBtn.style.display = "block";
+}
+
     if (puzzleCompleted) {
       timerEl.textContent = finalShareTime;
       if (shareSavedResult) {
@@ -1291,6 +1305,17 @@ https://venngame-ncza.onrender.com/`;
     });
   }
 
+  if (resetPuzzleBtn) {
+  resetPuzzleBtn.addEventListener('click', () => {
+
+    Object.keys(localStorage)
+      .filter(key => key.startsWith("intersection_game_"))
+      .forEach(key => localStorage.removeItem(key));
+
+    location.reload();
+  });
+}
+
   addEventListener('resize', () => {
     drawBase();
     if (lastMask && !notes[lastMask] && gameStarted && !tutorialMode) {
@@ -1298,7 +1323,32 @@ https://venngame-ncza.onrender.com/`;
     }
   });
 
-helpBtn.addEventListener('click', () => {
+const helpMenu = document.getElementById('helpMenu');
+const replayTutorialBtn = document.getElementById('replayTutorialBtn');
+
+helpBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+
+  helpMenu.classList.toggle('open');
+});
+
+document.addEventListener('click', () => {
+  helpMenu.classList.remove('open');
+  helpPanel.classList.remove('open');
+});
+
+helpPanel.addEventListener('click', (e) => {
+  e.stopPropagation();
+});
+
+helpMenu.addEventListener('click', (e) => {
+  e.stopPropagation();
+});
+
+replayTutorialBtn.addEventListener('click', () => {
+
+  helpMenu.classList.remove('open');
+
   tutorialStep = 0;
   tutorialMode = true;
 
@@ -1312,6 +1362,58 @@ helpBtn.addEventListener('click', () => {
   renderTutorialStep();
 });
 
+function openHelpPanel(title, html) {
+  helpMenu.classList.remove('open');
+  helpPanelTitle.textContent = title;
+  helpPanelText.innerHTML = html;
+  helpPanel.classList.add('open');
+}
+
+howToPlayBtn.addEventListener('click', () => {
+  openHelpPanel(
+    "How to Play",
+    `
+      <p>Each circle is a rule. Enter words that belong in each section of the diagram.</p>
+      <p>A word must go in the most specific region it satisfies. If it matches two rules, it belongs in the overlap, not a single-rule section.</p>
+      <p>Fill all seven regions to complete the puzzle.</p>
+    `
+  );
+});
+
+faqBtn.addEventListener('click', () => {
+  openHelpPanel(
+    "FAQ",
+    `
+      <p><strong>Why did my word go somewhere else?</strong><br>Words are placed automatically based on every rule they satisfy.</p>
+      <p><strong>When is there a new puzzle?</strong><br>A new puzzle appears every day at midnight Eastern time.</p>
+      <p><strong>Can I replay today’s puzzle?</strong><br>Your completed board stays saved for the day.</p>
+    `
+  );
+});
+
+aboutBtn.addEventListener('click', () => {
+  openHelpPanel(
+    "About Intersection",
+    `
+      <p>Intersection is a daily word game about overlaps, logic, and finding the perfect word for each region.</p>
+      <p>The goal is simple: complete the diagram as fast as you can.</p>
+    `
+  );
+});
+
+creatorBtn.addEventListener('click', () => {
+  openHelpPanel(
+    "Creator",
+    `
+      <p>Created by Jack Nelson.</p>
+      <p>Built as a daily puzzle game for people who like words, patterns, and clean little logic challenges.</p>
+    `
+  );
+});
+
+helpPanelClose.addEventListener('click', () => {
+  helpPanel.classList.remove('open');
+});
 
 const stageEl = document.getElementById('stage');
 
