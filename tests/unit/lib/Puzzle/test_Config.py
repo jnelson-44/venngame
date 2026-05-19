@@ -7,12 +7,27 @@ class TestPuzzle(unittest.TestCase):
         # Set up Config mocking
         self.config_patcher = patch.dict(Config.puzzle_config, clear=True,
             values={
-                "2026-04-31": [],
-                "2026-05-01": [],
-                "2026-03-15": [],
-                "2026-02-01": [],
-                "2026-05-06": [],
-            }
+    "2026-04-31": {
+        "difficulty": "Medium",
+        "criteria": [],
+    },
+    "2026-05-01": {
+        "difficulty": "Medium",
+        "criteria": [],
+    },
+    "2026-03-15": {
+        "difficulty": "Medium",
+        "criteria": [],
+    },
+    "2026-02-01": {
+        "difficulty": "Medium",
+        "criteria": [],
+    },
+    "2026-05-06": {
+        "difficulty": "Medium",
+        "criteria": [],
+    },
+}
         )
         self.config_patcher.start()
 

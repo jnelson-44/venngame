@@ -12,7 +12,7 @@ class TestPuzzle(unittest.IsolatedAsyncioTestCase):
             Length.AtLeastLength(8),
             Common.HasDoubleLetters()
         ]
-        self.puzzle = Puzzle("test-puzz", self.criteria)
+        self.puzzle = Puzzle("test-puzz", self.criteria, "Medium")
 
         # Set up Dictionary mocking
         self.word_exists_patcher = patch(
